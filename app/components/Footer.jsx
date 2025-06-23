@@ -12,6 +12,7 @@ export default function Footer() {
             src='/logo_big.png'
             width={64}
             height={64}
+            alt='logo'
            />
           Lorem Ipsum is simply dummy text of the printing and typesetting industry. </p>
         <div className='flex justify-between mt-4'>
@@ -20,6 +21,7 @@ export default function Footer() {
             src='/assets/Telegram.svg'
             width={20}
             height={20}
+            alt='telegram'
            />
           </button>
           <button className='p-[10px] border border-[#E4E4E7] rounded-full'>
@@ -27,6 +29,7 @@ export default function Footer() {
             src='/assets/Youtube.svg'
             width={20}
             height={20}
+            alt='youture'
            />
           </button>
           <button className='p-[10px] border border-[#E4E4E7] rounded-full'>
@@ -34,6 +37,7 @@ export default function Footer() {
             src='/assets/Twitter.svg'
             width={20}
             height={20}
+            alt='twitter'
            />
           </button>
           <button className='p-[10px] border border-[#E4E4E7] rounded-full'>
@@ -41,6 +45,7 @@ export default function Footer() {
             src='/assets/coin_market_cap.svg'
             width={20}
             height={20}
+            alt='coin_market_cap'
            />
           </button>
           <button className='p-[10px] border border-[#E4E4E7] rounded-full'>
@@ -48,6 +53,7 @@ export default function Footer() {
             src='/assets/Mail.svg'
             width={20}
             height={20}
+            alt='mail'
            />
           </button>
         </div>
@@ -84,6 +90,7 @@ export default function Footer() {
             src='/assets/email_green.svg'
             width={20}
             height={20}
+            alt='email'
            />
            Our News Letter
         </p>
@@ -93,6 +100,7 @@ export default function Footer() {
             src='/assets/sub_send.svg'
             width={32}
             height={32}
+            alt='send'
            />
         </button>
       </div>

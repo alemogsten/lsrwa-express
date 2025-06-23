@@ -6,8 +6,8 @@ import VerifyForm from "./VerifyForm";
 
 export default function TradeBox() {
   const [mode, setMode] = useState('buy');
-  const [sourceToken, setSourceToken] = useState('USDC');
-  const [destinationToken, setDestinationToken] = useState('LSRWA');
+  const [sourceToken, setSourceToken] = useState('RWA');
+  const [destinationToken, setDestinationToken] = useState('USDC');
   const [amount, setAmount] = useState('');
   const price = 1.05; // 1 LSRWA = 1.05 USDC
   const destinationAmount =
@@ -23,14 +23,14 @@ export default function TradeBox() {
 
   return (
     <div className="w-full p-6 bg-white shadow-lg rounded-2xl space-y-6">
-      <p className='font-bold text-[24px] leading-[30px]'>Swap Token</p>
-      <p>Trade tokens in an instant</p>
+      <p className='font-bold text-[24px] leading-[30px] mb-0'>Swap Token</p>
+      <p className='text-gray-500'>Trade tokens in an instant</p>
       {/* Mode Toggle */}
       <div className="flex justify-between">
         <button
           onClick={() => setMode('buy')}
           className={`w-1/2 py-2 font-semibold rounded-l-xl ${
-            mode === 'buy' ? 'bg-green text-white' : 'bg-gray-100 text-gray-600'
+            mode === 'buy' ? 'bg-[#0A1339] text-white' : 'bg-gray-100 text-gray-600'
           }`}
         >
           Buy
@@ -38,7 +38,7 @@ export default function TradeBox() {
         <button
           onClick={() => setMode('sell')}
           className={`w-1/2 py-2 font-semibold rounded-r-xl ${
-            mode === 'sell' ? 'bg-red-500 text-white' : 'bg-gray-100 text-gray-600'
+            mode === 'sell' ? 'bg-[#0A1339] text-white' : 'bg-gray-100 text-gray-600'
           }`}
         >
           Sell
@@ -47,7 +47,7 @@ export default function TradeBox() {
 
       {/* Source Input */}
       <div className="space-y-1">
-        <label className="text-sm text-gray-500">From ({sourceToken})</label>
+        <label className="text-sm text-gray-500">{sourceToken} Amount</label>
         <input
           type="number"
           placeholder="0.00"
@@ -71,8 +71,8 @@ export default function TradeBox() {
       </div>
 
       {/* Destination Display */}
-      <div className="space-y-1">
-        <label className="text-sm text-gray-500">To ({destinationToken})</label>
+      <div className="">
+        <label className="text-sm text-gray-500">{destinationToken}</label>
         <div className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-gray-50 text-lg">
           {destinationAmount}
         </div>

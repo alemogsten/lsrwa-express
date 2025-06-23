@@ -13,7 +13,7 @@ export default function HistoryCard({ type, id, timestamp, amount, status }) {
     <div className="flex gap-2 items-center">
       <div className="mt-6 flex items-center w-full justify-between bg-[#F6F8F9] rounded-[12px] py-[8px] px-[12px]">
         <div className="flex items-center gap-10">
-          <div className={clsx('border border-solid rounded-[100px] px-[21px] py-[2px]', type === 1 ? 'border-[#61CD81] bg-[#E6F7EB] text-[#239942]' : 'border-[#E151414D] bg-[#E1514129] text-[#E15141]')}>
+          <div className={clsx('w-[116px] border border-solid rounded-[100px] px-[21px] py-[2px]', type === 1 ? 'border-[#61CD81] bg-[#E6F7EB] text-[#239942]' : 'border-[#E151414D] bg-[#E1514129] text-[#E15141]')}>
             <p className="text-base leading-[22px] font-medium">{type === 1? 'Deposit' : 'Withdraw'}</p>
           </div>
           <div>

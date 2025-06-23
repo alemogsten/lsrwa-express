@@ -14,7 +14,7 @@ export default function TradeInfoCard({ title, value }) {
           height={32}
           priority
         />
-        <p className="mt-2 text-[24px] leading-[30px] font-bold">{value}</p>
+        <p className="text-[24px] leading-[30px] font-bold">{value}</p>
       </div>
     </div>
   );

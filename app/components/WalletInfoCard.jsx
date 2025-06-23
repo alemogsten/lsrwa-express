@@ -60,7 +60,7 @@ export default function WalletInfoCard() {
         
       </div>
       <p className='text-[14px] leading-[22px] mt-6'>Your Balance</p>
-      <p className='text-[46px] leading-[56px]'>{balance}</p>
+      <p className='text-[46px] leading-[56px]'>{isConnected ? balance : 0}</p>
       <div className=' flex  w-max gap-1 items-center bg-[#61CD81] px-[9px] py-[3px] rounded-full text-white'>
         <Image
           src="/assets/invest_hand.png"

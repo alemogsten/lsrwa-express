@@ -13,6 +13,7 @@ import Image from 'next/image';
 
 import { useWallet } from '@/hooks/useWallet';
 import clsx from "clsx";
+import { useRouter } from 'next/navigation';
 
 export default function Home() {
   const {
@@ -23,6 +24,10 @@ export default function Home() {
     symbol,
     isBalanceLoading,
   } = useWallet();
+  const router = useRouter();
+  const handleLogoClick = () => {
+    router.push('/');
+  };
   return (
     <main>
         <div className="pt-20 px-[20px] md:px-[46px] lg:px-[80px]">
@@ -32,6 +37,8 @@ export default function Home() {
                 alt="Logo"
                 width={48}
                 height={48}
+                onClick={handleLogoClick}
+                className="cursor-pointer"
                 priority
                 />
                 <div className="flex gap-10 items-center">
@@ -81,7 +88,7 @@ export default function Home() {
                 />
                 <p className="font-medium">Estimate your potential earnings</p>
             </div>
-            <div className="mt-8">
+            <div className="mt-8 w-full">
             <CalcCard />
             </div>
         </div>
