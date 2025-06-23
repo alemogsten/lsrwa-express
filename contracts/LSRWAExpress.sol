@@ -89,8 +89,6 @@ contract LSRWAExpress {
         withdrawCounter = 0;
     }
 
-    // --- Depositor ---
-
     function requestDeposit(uint256 amount) external returns (uint256 requestId) {
         require(amount > 0, "Zero amount");
         
@@ -116,17 +114,23 @@ contract LSRWAExpress {
 
     function cancelDepositRequest(uint256 requestId) external {
         DepositRequest storage req = depositRequests[requestId];
-        require(!req.processed && req.user == msg.sender, "Can't cancel");
+        require(!req.processed, "Already processed");
+        require(req.user == msg.sender, "Not request owner");
+
+        usdc.safeTransfer(req.user, req.amount);
         req.processed = true;
-        usdc.transfer(req.user, req.amount);
+        
         emit DepositCancelled(requestId, req.user);
     }
-
+    
+    // executeWithdraw for deposit cancel after approval
     function executeWithdraw(uint256 requestId) external {
         WithdrawRequest storage req = withdrawRequests[requestId];
         require(req.user == msg.sender && req.processed, "Not authorized");
+        require(req.amount > 0 && activeDeposits[msg.sender] >= req.amount, "Invalid amount");
+
         activeDeposits[msg.sender] -= req.amount;
-        usdc.transfer(req.user, req.amount);
+        usdc.safeTransfer(req.user, req.amount);
         emit WithdrawExecuted(requestId, req.user, req.amount);
     }
 
@@ -177,6 +181,14 @@ contract LSRWAExpress {
         for (uint256 i = 1; i <= withdrawCounter; i++) {
             WithdrawRequest storage req = withdrawRequests[i];
             if (!req.processed && activeDeposits[req.user] >= req.amount) {
+                
+                require(req.user == msg.sender && req.processed, "Not authorized");
+                require(req.amount > 0 && activeDeposits[msg.sender] >= req.amount, "Invalid amount");
+
+                activeDeposits[msg.sender] -= req.amount;
+                usdc.safeTransfer(req.user, req.amount);
+                emit WithdrawExecuted(i, req.user, req.amount);
+                
                 req.processed = true;
             }
         }
