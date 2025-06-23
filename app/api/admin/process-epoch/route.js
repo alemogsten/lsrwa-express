@@ -1,7 +1,7 @@
 // app/api/admin/process-epoch/route.js
 import { NextResponse } from "next/server";
 import { ethers } from "ethers";
-import vaultAbi from "@/abi/Vault.json";
+import vaultAbi from "@/abis/Vault.json";
 
 export async function POST() {
   try {

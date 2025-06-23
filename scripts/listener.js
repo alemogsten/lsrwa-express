@@ -2,7 +2,7 @@
 
 // scripts/listener.js
 import { ethers } from "ethers";
-import vaultAbi from "../../abis/Vault.json";
+import vaultAbi from "@/abis/Vault.json";
 import dotenv from "dotenv";
 dotenv.config();
 

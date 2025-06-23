@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { ethers } from "ethers";
-import useWallet from "../../hooks/useWallet";
-import vaultAbi from "../../abis/Vault.json";
-import { VAULT_ADDRESS } from "../../constants/addresses";
+import useWallet from "@/hooks/useWallet";
+import vaultAbi from "@/abis/Vault.json";
+import { VAULT_ADDRESS } from "@/constants/addresses";
 
 export default function ExecuteWithdrawForm() {
   const { signer } = useWallet();
