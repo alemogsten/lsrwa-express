@@ -2,6 +2,8 @@
 'use client';
 
 import { useAccount, useBalance, useDisconnect } from 'wagmi';
+import { formatUnits } from 'ethers';
+
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -29,13 +31,15 @@ export function useWallet() {
     watch: true,
   });
 
+  const decimals = parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS || '6');
+
   return {
     address,
     isConnected,
     status,
     connector,
     disconnect,
-    balance: Number(usdcBalance?.value) / Number(Math.pow(10, process.env.NEXT_PUBLIC_USDC_DECIMALS)) ?? '0.0',
+    balance: usdcBalance?.value ? formatUnits(usdcBalance.value, decimals) : '0.0',
     symbol: usdcBalance?.symbol ?? '',
     // balance: balanceData?.formatted ?? '0.0',
     // symbol: balanceData?.symbol ?? '',

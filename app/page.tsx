@@ -92,7 +92,7 @@ export default function Home() {
         </div>
         }
         <div className="col-span-5 lg:col-span-2 lg:h-[565px] overflow-hidden">
-        <RequestHistory isConnected={isConnected} histories={histoires}/>
+        <RequestHistory />
         </div>
       </div>
       {

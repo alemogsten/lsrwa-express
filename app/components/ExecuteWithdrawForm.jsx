@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import { ethers } from "ethers";
-import useWallet from "@/hooks/useWallet";
+import { connectWallet } from "@/utils/wallet";
 import vaultAbi from "@/abis/Vault.json";
-import { VAULT_ADDRESS } from "@/constants/addresses";
 
 export default function ExecuteWithdrawForm() {
-  const { signer } = useWallet();
+  const { signer } = connectWallet();
   const [requestId, setRequestId] = useState("");
   const [status, setStatus] = useState("");
 
@@ -15,7 +14,7 @@ export default function ExecuteWithdrawForm() {
     try {
       if (!signer) return alert("Connect wallet first");
 
-      const vault = new ethers.Contract(VAULT_ADDRESS, vaultAbi, signer);
+      const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
       setStatus("Sending withdraw transaction...");
 
       const tx = await vault.executeWithdraw(BigInt(requestId));

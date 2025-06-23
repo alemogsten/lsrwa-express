@@ -67,7 +67,7 @@ contract LSRWAExpress {
         uint256 amount;
         uint256 timestamp;
         bool processed;
-        bool fulfilled;
+        bool executed;
     }
 
     struct Epoch {
@@ -96,19 +96,19 @@ contract LSRWAExpress {
 
 
     // --- Events ---
-    event DepositRequested(uint256 requestId, address user, uint256 amount, uint256 timestamp);
-    event WithdrawRequested(uint256 requestId, address user, uint256 amount, uint256 timestamp);
-    event DepositApproved(uint256 requestId, address user, uint256 amount);
-    event WithdrawApproved(uint256 requestId, address user, uint256 amount);
-    event PartialWithdrawalFilled(uint256 requestId, address user, uint256 amount, uint256 timestamp);
-    event DepositCancelled(uint256 requestId, address user);
-    event WithdrawExecuted(uint256 requestId, address user, uint256 amount);
-    event EpochProcessed(uint256 epochId, uint256 totalDeposits, uint256 totalWithdrawals);
-    event CollateralDeposited(address originator, uint256 amount);
-    event BorrowRequested(address originator, uint256 amount);
-    event BorrowExecuted(uint256 requestId, address originator, uint256 seizedAmount);
-    event CollateralLiquidated(address originator, uint256 seizedAmount);
-    event RewardsClaimed(address sender, uint256 amount);
+    event DepositRequested(uint256 requestId, address indexed user, uint256 amount, uint256 timestamp);
+    event WithdrawRequested(uint256 requestId, address indexed user, uint256 amount, uint256 timestamp);
+    event DepositApproved(uint256 requestId, address indexed user, uint256 amount);
+    event WithdrawApproved(uint256 requestId, address indexed user, uint256 amount);
+    event PartialWithdrawalFilled(uint256 requestId, address indexed user, uint256 amount, uint256 timestamp);
+    event DepositCancelled(uint256 requestId, address indexed user);
+    event WithdrawExecuted(uint256 requestId, address indexed user, uint256 amount);
+    event EpochProcessed(uint256 indexed epochId, uint256 totalDeposits, uint256 totalWithdrawals);
+    event CollateralDeposited(address indexed originator, uint256 amount);
+    event BorrowRequested(address indexed originator, uint256 amount);
+    event BorrowExecuted(uint256 requestId, address indexed originator, uint256 seizedAmount);
+    event CollateralLiquidated(address indexed originator, uint256 seizedAmount);
+    event RewardsClaimed(address indexed sender, uint256 amount);
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "Not admin");
@@ -163,16 +163,22 @@ contract LSRWAExpress {
     }
 
     // executeWithdraw for deposit cancel after approval
-    function executeWithdraw(uint256 requestId) external {
+   function executeWithdraw(uint256 requestId) external {
         WithdrawRequest storage req = withdrawRequests[requestId];
-        require(req.user == msg.sender && req.processed, "Not authorized");
-        require(req.amount > 0 && activeDeposits[msg.sender] >= req.amount, "Invalid amount");
+        
+        require(req.user == msg.sender, "Not authorized");
+        require(req.processed, "Not approved yet");
+        require(!req.executed, "Already executed");
+        require(req.amount > 0, "Invalid amount");
+        require(activeDeposits[msg.sender] >= req.amount, "Insufficient balance");
 
-        activeDeposits[msg.sender] -= req.amount;
+        req.executed = true;
         usdc.safeTransfer(req.user, req.amount);
+
         if (activeDeposits[req.user] == 0 && isActiveUser[req.user]) {
             isActiveUser[req.user] = false;
         }
+
         emit WithdrawExecuted(requestId, req.user, req.amount);
     }
 

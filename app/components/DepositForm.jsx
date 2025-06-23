@@ -5,11 +5,7 @@ import { ethers } from "ethers";
 import { useWallet } from "@/hooks/useWallet";
 import vaultAbi from "@/abis/Vault.json";
 import erc20Abi from "@/abis/ERC20.json";
-import { VAULT_ADDRESS, USDC_ADDRESS } from "@/constants/addresses";
 import { connectWallet } from "@/utils/wallet";
-
-import dotenv from "dotenv";
-dotenv.config();
 
 export default function DepositForm() {
   const {
