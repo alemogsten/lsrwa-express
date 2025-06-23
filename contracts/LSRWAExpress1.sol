@@ -16,7 +16,7 @@ contract LSRWAExpress {
 
     // --- State Variables ---
     address public admin;
-    Epoch public currentEpoch;
+    uint256 public currentEpoch;
     uint256 public epochDuration; // in blocks
     uint256 public lastEpochBlock;
     uint256 public rewardAPR;
@@ -28,17 +28,6 @@ contract LSRWAExpress {
     mapping(address => uint256) public activeDeposits;
     mapping(address => BorrowRequest) public borrowRequests;
     mapping(uint256 => Epoch) public epochs;
-    mapping(address => uint256) public unclaimedRewards;
-    mapping(address => uint256) public collateralDeposits;
-    mapping(uint256 => ApprovedRequest) public approvedRequestQueue;
-    mapping(address => bool) public isActiveUser;
-    mapping(address => bool) public isBorrower;
-
-    uint256 public approvedRequestStart;
-    uint256 public approvedRequestEnd;
-
-    address[] public activeUserList;
-    address[] public borrowerList;
     
     uint256 public poolUSDC; // available liquidity
     uint256 public poolLSRWA;
@@ -46,13 +35,10 @@ contract LSRWAExpress {
     uint256 public currentUSDC;
     uint256 public currentLSRWA;
     uint256 public currentCollaterals;
-    uint256 public collateralRatio;
 
     uint256 public depositCounter;
     uint256 public withdrawCounter;
     uint256 public epochCounter;
-    uint256 public borrowCounter;
-    uint256 public currentEpochId;
 
     // --- Structs ---
     struct DepositRequest {
@@ -81,7 +67,7 @@ contract LSRWAExpress {
 
     struct BorrowRequest {
         uint256 collateralAmount; // LSRWA
-        uint256 amount;   // USDC
+        uint256 borrowedAmount;   // USDC
         uint256 startEpoch;
         bool repaid;
     }
@@ -106,9 +92,7 @@ contract LSRWAExpress {
     event EpochProcessed(uint256 epochId, uint256 totalDeposits, uint256 totalWithdrawals);
     event CollateralDeposited(address originator, uint256 amount);
     event BorrowRequested(address originator, uint256 amount);
-    event BorrowExecuted(uint256 requestId, address originator, uint256 seizedAmount);
     event CollateralLiquidated(address originator, uint256 seizedAmount);
-    event RewardsClaimed(address sender, uint256 amount);
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "Not admin");
@@ -126,6 +110,7 @@ contract LSRWAExpress {
         poolUSDC = 0;
         poolLSRWA = 0;
         
+        currentEpoch = block.number / epochDuration + 1; // current 5 week period
     }
 
     function requestDeposit(uint256 amount) external returns (uint256 requestId) {
@@ -170,48 +155,34 @@ contract LSRWAExpress {
 
         activeDeposits[msg.sender] -= req.amount;
         usdc.safeTransfer(req.user, req.amount);
-        if (activeDeposits[req.user] == 0 && isActiveUser[req.user]) {
-            isActiveUser[req.user] = false;
-        }
         emit WithdrawExecuted(requestId, req.user, req.amount);
     }
 
     function claimRewards() external {
-        uint256 reward = unclaimedRewards[msg.sender];
-        require(reward > 0, "No rewards");
-
-        unclaimedRewards[msg.sender] = 0;
-        usdc.safeTransfer(msg.sender, reward);
-        emit RewardsClaimed(msg.sender, reward);
+        // TODO: Track and distribute yield rewards
     }
 
     // --- Originator ---
     function depositCollateral(uint256 amount) external {
         lsrwa.safeTransferFrom(msg.sender, address(this), amount);
         borrowRequests[msg.sender].collateralAmount += amount;
-        
         emit CollateralDeposited(msg.sender, amount);
     }
 
     function requestBorrow(uint256 amount) external {
         BorrowRequest storage pos = borrowRequests[msg.sender];
         require(pos.collateralAmount > 0, "No collateral");
-        require(pos.amount == 0, "Already borrowed");
+        require(pos.borrowedAmount == 0, "Already borrowed");
 
-        pos.amount = amount;
-        pos.startEpoch = currentEpoch.startBlock;
-
-        if (!isBorrower[msg.sender]) {
-            isBorrower[msg.sender] = true;
-            borrowerList.push(msg.sender);
-        }
-
+        pos.borrowedAmount = amount;
+        pos.startEpoch = currentEpoch;
+        usdc.safeTransfer(msg.sender, amount);
         emit BorrowRequested(msg.sender, amount);
     }
 
     function repayBorrow(uint256 amount) external {
         BorrowRequest storage pos = borrowRequests[msg.sender];
-        require(pos.amount > 0 && !pos.repaid, "Nothing to repay");
+        require(pos.borrowedAmount > 0 && !pos.repaid, "Nothing to repay");
         usdc.safeTransferFrom(msg.sender, address(this), amount);
         pos.repaid = true;
     }
@@ -219,113 +190,135 @@ contract LSRWAExpress {
     // --- Admin ---
     function processRequests(ApprovedRequest[] calldata requests) external onlyAdmin {
         for (uint256 i = 0; i < requests.length; i++) {
-            approvedRequestQueue[approvedRequestEnd] = requests[i];
-            approvedRequestEnd++;
-        }
-    }
-
-    function processEpoch() external onlyAdmin {
-        require(block.number > currentEpoch.endBlock, "Epoch not ended");
-
-        uint256 liquidity = poolUSDC;
-        uint256 totalActiveDeposits;
-        uint256 totalWithdrawals;
-
-        // Process approved deposit/withdraw
-        for (uint256 i = approvedRequestStart; i < approvedRequestEnd; i++) {
-            ApprovedRequest memory req = approvedRequestQueue[i];
+            ApprovedRequest calldata req = requests[i];
 
             if (req.isWithdraw) {
                 WithdrawRequest storage wReq = withdrawRequests[req.requestId];
                 require(!wReq.processed, "Already processed");
 
-                if (liquidity >= req.amount) {
-                    usdc.safeTransfer(req.user, req.amount);
-                    activeDeposits[req.user] -= req.amount;
-                    liquidity -= req.amount;
-                    totalWithdrawals += req.amount;
-                    wReq.processed = true;
-                    emit WithdrawApproved(req.requestId, req.user, req.amount);
-                } else if (liquidity > 0) {
-                    // Partial fill
-                    uint256 partialAmount = liquidity;
-                    usdc.safeTransfer(req.user, partialAmount);
-                    activeDeposits[req.user] -= partialAmount;
-                    liquidity = 0;
-                    totalWithdrawals += partialAmount;
+                // Transfer the approved amount
+                usdc.safeTransfer(req.user, req.amount);
+                activeDeposits[req.user] -= req.amount;
 
-                    wReq.processed = true;
-
-                    uint256 remaining = req.amount - partialAmount;
+                if (req.amount < wReq.amount) {
+                    // Partial fill — re-emit event with remaining
+                    uint256 remaining = wReq.amount - req.amount;
                     withdrawCounter++;
                     withdrawRequests[withdrawCounter] = WithdrawRequest(
                         req.user, remaining, req.timestamp, false, false
                     );
-                    
-                    emit WithdrawApproved(req.requestId, req.user, partialAmount);
                     emit WithdrawRequested(withdrawCounter, req.user, remaining, req.timestamp);
                 }
+
+                wReq.processed = true;
+                emit WithdrawApproved(req.requestId, req.user, req.amount);
             } else {
-                if (!isActiveUser[req.user]) {
-                    isActiveUser[req.user] = true;
-                    activeUserList.push(req.user);
-                }
-                activeDeposits[req.user] += req.amount;
-                totalActiveDeposits += req.amount;
-                emit DepositApproved(req.requestId, req.user, req.amount);
-            }
-
-            delete approvedRequestQueue[i];
-        }
-
-        // Borrowing
-        for (uint256 i = 1; i <= borrowerList.length; i++) {
-            address borrower = borrowerList[i];
-            BorrowRequest storage bReq = borrowRequests[borrower];
-            if (!bReq.repaid) {
-                uint256 collateralValue = collateralDeposits[borrower]; // Assumes 1:1 for simplicity
-                if (liquidity >= bReq.amount && collateralValue * 100 / bReq.amount >= collateralRatio) {
-                    liquidity -= bReq.amount;
-                    usdc.safeTransfer(borrower, bReq.amount);
-                    bReq.startEpoch = currentEpoch.startBlock;
-                    emit BorrowExecuted(i, borrower, bReq.amount);
-                }
+                DepositRequest storage dReq = depositRequests[req.requestId];
+                require(!dReq.processed, "Already processed");
+                dReq.processed = true;
+                activeDeposits[dReq.user] += req.amount;
+                emit DepositApproved(req.requestId, dReq.user, req.amount);
             }
         }
 
-        // Rewards
-        uint256 duration = currentEpoch.endBlock - currentEpoch.startBlock;
-        uint256 epochReward = (totalActiveDeposits * currentEpoch.aprBps * duration) / (2102400 * 10000); // 2102400 blocks ≈ 365 days at 15s/block
+        // emit BatchProcessed(block.timestamp, requests.length);
+    }
+    function processEpoch() external onlyAdmin {
+        Epoch storage lastEpoch = epochs[epochCounter];
+        require(block.number >= lastEpoch.endBlock, "Epoch not ended");
 
-        if (epochReward > 0 && totalActiveDeposits > 0) {
-            for (uint256 i = 0; i < activeUserList.length; i++) {
-                address user = activeUserList[i];
-                if (!isActiveUser[user]) continue;
-                uint256 userDeposit = activeDeposits[user];
-                if (userDeposit > 0) {
-                    uint256 reward = (userDeposit * epochReward) / totalActiveDeposits;
-                    unclaimedRewards[user] += reward;
-                }
-            }
+        epochCounter++;
+        uint256 startBlock = block.number;
+        uint256 endBlock = startBlock + epochDuration;
 
-            currentEpoch.rewardsDistributed = epochReward;
-        }
-
-        currentEpoch = Epoch({
-            startBlock: currentEpoch.endBlock + 1,
-            endBlock: currentEpoch.endBlock + epochDuration,
-            totalDeposits: totalActiveDeposits,
-            totalWithdrawals: totalWithdrawals,
-            rewardsDistributed: 0,
+        // Record stats
+        epochs[epochCounter] = Epoch({
+            startBlock: startBlock,
+            endBlock: endBlock,
+            totalDeposits: 0,           // Will update in processRequests
+            totalWithdrawals: 0,        // Will update in processRequests
+            rewardsDistributed: 0,      // Optional
             aprBps: rewardAPR
         });
 
-        emit EpochProcessed(currentEpochId, totalActiveDeposits, totalWithdrawals);
-
-        // Move pointer forward
-        approvedRequestStart = approvedRequestEnd;
-        currentEpochId++;
+        emit EpochProcessed(epochCounter, startBlock, endBlock);
     }
+
+    // function processEpoch() external onlyAdmin {
+    //     Epoch storage lastEpoch = epochs[epochCounter];
+    //     require(block.number >= lastEpoch.endBlock, "Epoch not ended");
+
+    //     epochCounter++;
+    //     uint256 startBlock = block.number;
+    //     uint256 endBlock = startBlock + epochDuration;
+    //     uint256 totalWithdrawals = 0;
+    //     uint256 totalDeposits = 0;
+    //     uint256 remainingLiquidity = poolUSDC;
+
+    //     // Step 1: Process Withdrawals (FIFO with partial fills)
+    //     for (uint256 i = 1; i <= withdrawCounter; i++) {
+    //         WithdrawRequest storage req = withdrawRequests[i];
+
+    //         if (!req.processed && activeDeposits[req.user] >= req.amount) {
+    //             if (remainingLiquidity >= req.amount) {
+    //                 // Full fill
+    //                 req.processed = true;
+    //                 req.fulfilled = true;
+    //                 totalWithdrawals += req.amount;
+    //                 remainingLiquidity -= req.amount;
+
+    //                 emit WithdrawApproved(i, req.user, req.amount);
+    //             } else if (remainingLiquidity > 0) {
+    //                 // Partial fill
+    //                 uint256 partialAmount = remainingLiquidity;
+
+    //                 // Emit event with backdated timestamp
+    //                 emit PartialWithdrawalFilled(i, req.user, partialAmount, req.timestamp);
+
+    //                 // Update the original request
+    //                 req.amount -= partialAmount;
+    //                 remainingLiquidity = 0;
+    //                 totalWithdrawals += partialAmount;
+    //             }
+
+    //             if (remainingLiquidity == 0) {
+    //                 break; // No funds left, break early
+    //             }
+    //         }
+    //     }
+
+    //     // Step 2: Process Deposits
+    //     for (uint256 j = 1; j <= depositCounter; j++) {
+    //         DepositRequest storage dep = depositRequests[j];
+
+    //         if (!dep.processed) {
+    //             dep.processed = true;
+    //             activeDeposits[dep.user] += dep.amount;
+    //             totalDeposits += dep.amount;
+    //             remainingLiquidity += dep.amount;
+
+    //             emit DepositApproved(j, dep.user, dep.amount);
+    //         }
+    //     }
+
+    //     // Update available pool
+    //     poolUSDC = remainingLiquidity;
+
+    //     // Step 3: Record Epoch Stats
+    //     epochs[epochCounter] = Epoch({
+    //         startBlock: startBlock,
+    //         endBlock: endBlock,
+    //         totalDeposits: totalDeposits,
+    //         totalWithdrawals: totalWithdrawals,
+    //         rewardsDistributed: 0,
+    //         aprBps: rewardAPR
+    //     });
+
+    //     currentEpoch = epochCounter;
+
+    //     emit EpochProcessed(epochCounter, totalDeposits, totalWithdrawals);
+    // }
+
 
     function setRewardAPR(uint256 aprBps) external onlyAdmin {
         rewardAPR = aprBps;
@@ -341,7 +334,7 @@ contract LSRWAExpress {
 
     function liquidateCollateral(address originator) external onlyAdmin {
         BorrowRequest storage pos = borrowRequests[originator];
-        require(!pos.repaid && currentEpoch.startBlock > pos.startEpoch + maxEpochsBeforeLiquidation, "Not eligible");
+        require(!pos.repaid && currentEpoch > pos.startEpoch + maxEpochsBeforeLiquidation, "Not eligible");
 
         uint256 seized = pos.collateralAmount;
         pos.collateralAmount = 0;

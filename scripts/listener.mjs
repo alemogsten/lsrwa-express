@@ -25,6 +25,18 @@ vault.on("WithdrawExecuted", (requestId, user, amount) => {
   console.log("📥 WithdrawExecut:", requestId.toString(), user, amount);
   // Optionally write to local DB, file, or call internal API
 });
+vault.on("DepositApproved", (requestId, user, amount) => {
+  console.log("📥 DepositApprove:", requestId.toString(), user, amount);
+  // Optionally write to local DB, file, or call internal API
+});
+vault.on("WithdrawApproved", (requestId, user, amount) => {
+  console.log("📥 WithdrawApproved:", requestId.toString(), user, amount);
+  // Optionally write to local DB, file, or call internal API
+});
+vault.on("PartialWithdrawalFilled", (requestId, user, amount, timestamp) => {
+  console.log("📥 PartialWithdrawalFill:", requestId.toString(), user, amount, timestamp);
+  // Optionally write to local DB, file, or call internal API
+});
 vault.on("BorrowRequested", (user, amount) => {
   console.log("📥 BorrowRequest:", user, amount);
   // Optionally write to local DB, file, or call internal API

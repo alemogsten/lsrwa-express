@@ -20,7 +20,7 @@ export default function WalletInfoCard() {
     router.push('/deposit');
   };
   const handleWithdrawClick = () => {
-    // router.push('/withdraw');
+    router.push('/withdraw');
   };
   const handleSwapClick = () => {
     router.push('/swap');
