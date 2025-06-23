@@ -2,22 +2,31 @@
 
 import { useState } from "react";
 import { ethers } from "ethers";
-import useWallet from "@/hooks/useWallet";
+import { useWallet } from "@/hooks/useWallet";
 import vaultAbi from "@/abis/Vault.json";
 import erc20Abi from "@/abis/ERC20.json";
 import { VAULT_ADDRESS, USDC_ADDRESS } from "@/constants/addresses";
+import { connectWallet } from "@/utils/wallet";
 
 import dotenv from "dotenv";
 dotenv.config();
 
 export default function DepositForm() {
-  const { signer, connected } = useWallet();
+  const {
+    address,
+    isConnected,
+    disconnect,
+    balance,
+    symbol,
+    isBalanceLoading,
+  } = useWallet();
   const [amount, setAmount] = useState("");
   const [status, setStatus] = useState("");
 
   const handleDeposit = async () => {
     try {
-      if (!signer) return alert("Wallet not connected");
+      const { signer } = await connectWallet();
+      if (!isConnected) return alert("Wallet not connected");
       const usdc = new ethers.Contract(process.env.NEXT_PUBLIC_USDC_ADDRESS, erc20Abi, signer);
       const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
 
@@ -25,11 +34,11 @@ export default function DepositForm() {
 
       setStatus("Checking allowance...");
       const owner = await signer.getAddress();
-      const allowance = await usdc.allowance(owner, VAULT_ADDRESS);
+      const allowance = await usdc.allowance(owner, process.env.NEXT_PUBLIC_VAULT_ADDRESS);
 
       if (allowance < parsedAmount) {
         setStatus("Approving USDC...");
-        const approveTx = await usdc.approve(VAULT_ADDRESS, parsedAmount);
+        const approveTx = await usdc.approve(process.env.NEXT_PUBLIC_VAULT_ADDRESS, parsedAmount);
         await approveTx.wait();
       }
 
@@ -45,7 +54,7 @@ export default function DepositForm() {
   };
 
   return (
-    <div className="flex flex-col gap-4 mt-6">
+    <div className="flex flex-col gap-4 mt-6 p-6">
       <input
         type="number"
         placeholder="Amount in USDC"

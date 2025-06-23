@@ -15,7 +15,7 @@ import { useWallet } from '@/hooks/useWallet';
 import clsx from "clsx";
 import { useRouter } from 'next/navigation';
 
-export default function Home() {
+export default function Swap() {
   const {
     address,
     isConnected,

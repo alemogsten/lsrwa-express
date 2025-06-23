@@ -17,7 +17,7 @@ export default function WalletInfoCard() {
   const router = useRouter();
 
   const handleDepositClick = () => {
-    // router.push('/deposit');
+    router.push('/deposit');
   };
   const handleWithdrawClick = () => {
     // router.push('/withdraw');
