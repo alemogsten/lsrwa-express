@@ -15,7 +15,7 @@ const config = createConfig({
   chains: [sepolia],
   connectors: [
     walletConnect({
-      projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID,
+      projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID+'',
       // metadata: {
       //   name: 'LSRWA Express',
       //   description: 'DeFi Vault DApp',
