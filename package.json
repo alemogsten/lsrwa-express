@@ -1,0 +1,33 @@
+{
+  "name": "lsrwa-express",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.1.10",
+    "@tanstack/react-query": "^5.80.10",
+    "@wagmi/core": "^2.17.3",
+    "@walletconnect/ethereum-provider": "^2.21.3",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "dotenv": "^16.5.0",
+    "ethers": "^6.14.4",
+    "next": "15.3.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "recharts": "^2.15.3",
+    "tailwindcss": "^4.1.10",
+    "wagmi": "^2.15.6"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "typescript": "^5"
+  }
+}
