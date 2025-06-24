@@ -24,12 +24,12 @@ contract LSRWAExpress {
     // --- Mappings ---
     mapping(uint256 => DepositRequest) public depositRequests;
     mapping(uint256 => WithdrawRequest) public withdrawRequests;
+    mapping(uint256 => ApprovedRequest) public approvedRequestQueue;
+    mapping(uint256 => Epoch) public epochs;
     mapping(address => uint256) public activeDeposits;
     mapping(address => BorrowRequest) public borrowRequests;
-    mapping(uint256 => Epoch) public epochs;
-    mapping(address => uint256) public unclaimedRewards;
     mapping(address => uint256) public collateralDeposits;
-    mapping(uint256 => ApprovedRequest) public approvedRequestQueue;
+    mapping(address => uint256) public unclaimedRewards;
     mapping(address => bool) public isActiveUser;
     mapping(address => bool) public isBorrower;
 
@@ -42,9 +42,6 @@ contract LSRWAExpress {
     uint256 public poolUSDC; // available liquidity
     uint256 public poolLSRWA;
 
-    uint256 public currentUSDC;
-    uint256 public currentLSRWA;
-    uint256 public currentCollaterals;
     uint256 public collateralRatio;
 
     uint256 public depositCounter;
@@ -79,9 +76,8 @@ contract LSRWAExpress {
     }
 
     struct BorrowRequest {
-        uint256 collateralAmount; // LSRWA
         uint256 amount;   // USDC
-        uint256 startEpoch;
+        uint256 epochStart;
         bool repaid;
     }
 
@@ -105,7 +101,7 @@ contract LSRWAExpress {
     event EpochProcessed(uint256 indexed epochId, uint256 totalDeposits, uint256 totalWithdrawals);
     event CollateralDeposited(address indexed originator, uint256 amount);
     event BorrowRequested(address indexed originator, uint256 amount);
-    event BorrowExecuted(uint256 requestId, address indexed originator, uint256 seizedAmount);
+    event BorrowExecuted(address indexed originator, uint256 seizedAmount);
     event CollateralLiquidated(address indexed originator, uint256 seizedAmount);
     event RewardsClaimed(address indexed sender, uint256 amount);
 
@@ -192,18 +188,16 @@ contract LSRWAExpress {
     // --- Originator ---
     function depositCollateral(uint256 amount) external {
         lsrwa.safeTransferFrom(msg.sender, address(this), amount);
-        borrowRequests[msg.sender].collateralAmount += amount;
+        collateralDeposits[msg.sender] += amount;
         
         emit CollateralDeposited(msg.sender, amount);
     }
 
     function requestBorrow(uint256 amount) external {
         BorrowRequest storage pos = borrowRequests[msg.sender];
-        require(pos.collateralAmount > 0, "No collateral");
         require(pos.amount == 0, "Already borrowed");
 
         pos.amount = amount;
-        pos.startEpoch = currentEpoch.startBlock;
 
         if (!isBorrower[msg.sender]) {
             isBorrower[msg.sender] = true;
@@ -231,7 +225,6 @@ contract LSRWAExpress {
     function processEpoch() external onlyAdmin {
         require(block.number > currentEpoch.endBlock, "Epoch not ended");
 
-        uint256 liquidity = poolUSDC;
         uint256 totalActiveDeposits;
         uint256 totalWithdrawals;
 
@@ -243,19 +236,19 @@ contract LSRWAExpress {
                 WithdrawRequest storage wReq = withdrawRequests[req.requestId];
                 require(!wReq.processed, "Already processed");
 
-                if (liquidity >= req.amount) {
+                if (poolUSDC >= req.amount) {
                     usdc.safeTransfer(req.user, req.amount);
                     activeDeposits[req.user] -= req.amount;
-                    liquidity -= req.amount;
+                    poolUSDC -= req.amount;
                     totalWithdrawals += req.amount;
                     wReq.processed = true;
                     emit WithdrawApproved(req.requestId, req.user, req.amount);
-                } else if (liquidity > 0) {
+                } else if (poolUSDC > 0) {
                     // Partial fill
-                    uint256 partialAmount = liquidity;
+                    uint256 partialAmount = poolUSDC;
                     usdc.safeTransfer(req.user, partialAmount);
                     activeDeposits[req.user] -= partialAmount;
-                    liquidity = 0;
+                    poolUSDC = 0;
                     totalWithdrawals += partialAmount;
 
                     wReq.processed = true;
@@ -287,12 +280,12 @@ contract LSRWAExpress {
             address borrower = borrowerList[i];
             BorrowRequest storage bReq = borrowRequests[borrower];
             if (!bReq.repaid) {
-                uint256 collateralValue = collateralDeposits[borrower]; // Assumes 1:1 for simplicity
-                if (liquidity >= bReq.amount && collateralValue * 100 / bReq.amount >= collateralRatio) {
-                    liquidity -= bReq.amount;
+                uint256 collateralValue = collateralDeposits[borrower];
+                if (poolUSDC >= bReq.amount && collateralValue * 100 / bReq.amount >= collateralRatio) {
+                    poolUSDC -= bReq.amount;
                     usdc.safeTransfer(borrower, bReq.amount);
-                    bReq.startEpoch = currentEpoch.startBlock;
-                    emit BorrowExecuted(i, borrower, bReq.amount);
+                    bReq.epochStart = currentEpochId;
+                    emit BorrowExecuted(borrower, bReq.amount);
                 }
             }
         }
@@ -311,8 +304,6 @@ contract LSRWAExpress {
                     unclaimedRewards[user] += reward;
                 }
             }
-
-            currentEpoch.rewardsDistributed = epochReward;
         }
 
         currentEpoch = Epoch({
@@ -320,7 +311,7 @@ contract LSRWAExpress {
             endBlock: currentEpochId == 0 ? block.number + epochDuration : currentEpoch.endBlock + 1 + epochDuration,
             totalDeposits: totalActiveDeposits,
             totalWithdrawals: totalWithdrawals,
-            rewardsDistributed: 0,
+            rewardsDistributed: epochReward,
             aprBps: rewardAPR
         });
 
@@ -343,12 +334,15 @@ contract LSRWAExpress {
         maxEpochsBeforeLiquidation = epoch;
     }
 
+    function setCollateralRatio(uint256 ratio) external onlyAdmin {
+        collateralRatio = ratio;
+    }
+
     function liquidateCollateral(address originator) external onlyAdmin {
         BorrowRequest storage pos = borrowRequests[originator];
-        require(!pos.repaid && currentEpoch.startBlock > pos.startEpoch + maxEpochsBeforeLiquidation, "Not eligible");
+        require(!pos.repaid && currentEpochId > pos.epochStart + maxEpochsBeforeLiquidation, "Not eligible");
 
-        uint256 seized = pos.collateralAmount;
-        pos.collateralAmount = 0;
+        uint256 seized = collateralDeposits[originator];
         pos.repaid = true;
 
         // Convert LSRWA to USDC off-chain (not in contract)
