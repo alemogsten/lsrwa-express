@@ -6,7 +6,7 @@ import vaultAbi from "../abis/Vault.json" assert { type: "json" };
 dotenv.config();
 
 const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
-const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL;
+const SEPOLIA_RPC_URL = process.env.NEXT_PUBLIC_SEPOLIA_RPC;
 const PRIVATE_KEY = process.env.ADMIN_PRIVATE_KEY;
 
 const provider = new ethers.JsonRpcProvider(SEPOLIA_RPC_URL);

@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import axios from 'axios';
 
-import { ethers } from 'ethers';
-import vaultAbi from '@/abis/Vault.json';
-import { connectWallet } from "@/utils/wallet";
+import EpochProgressBar from '../components/EpochProgressBar';
+import EpochDurationManager from '../components/EpochDurationManager';
+import RewardAPRManager from '../components/RewardAprManager';
 
 export default function AdminDashboard() {
     const [requests, setRequests] = useState([]);
@@ -14,42 +15,33 @@ export default function AdminDashboard() {
     const [total, setTotal] = useState(0);
     const limit = 10;
 
+    const [processingRequests, setProcessingRequests] = useState(false);
     const handleProcessRequests = async () => {
-        
+        setProcessingRequests(true);
         try {
-            const { signer } = await connectWallet();
-            if (!signer) {
-                alert("Wallet not connected");
-                return;
-            }
-            
-            const res = await fetch(`/api/admin/requests?status=pending`);
-            const { data } = await res.json();
-
-            const approvedRequests = data.map((r) => ({
-                user: r.user,
-                requestId: r.requestId,
-                amount: r.amount,
-                timestamp: r.timestamp,
-                isWithdraw: r.type === 'withdraw',
-            }));
-
-            if (!approvedRequests.length) {
-                alert("No pending requests to process");
-                return;
-            }
-
-            const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
-
-            const tx = await vault.processRequests(approvedRequests);
-            await tx.wait();
-
-            alert("Requests processed!");
+            const res = await axios.post('/api/admin/process-requests');
+            alert(res.data.success ? "Requests processed!" : "Failed!");
         } catch (err) {
             console.error("Failed to process requests:", err);
             alert("Error processing requests");
+        } finally {
+            setProcessingRequests(false);
         }
-    }
+    };
+
+    const [processingEpoch, setProcessingEpoch] = useState(false);
+    const handleProcessEpoch = async () => {
+        setProcessingEpoch(true);
+        try {
+            const res = await axios.post('/api/admin/process-epoch');
+            alert(res.data.success ? "Epoch processed!" : "Failed!");
+        } catch (err) {
+            console.error("Failed to process epoch:", err);
+            alert("Error processing epoch");
+        } finally {
+            setProcessingEpoch(false);
+        }
+    };
 
     useEffect(() => {
         const fetchRequests = async () => {
@@ -87,9 +79,12 @@ export default function AdminDashboard() {
                 </select>
                 <button
                     onClick={handleProcessRequests}
-                    className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded"
+                    disabled={processingRequests}
+                    className={`px-4 py-2 flex items-center gap-2 rounded text-white ${
+                        processingRequests ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+                    }`}
                 >
-                    Approve Requests
+                    {processingRequests ? 'Processing...' : 'Process Requests'}
                 </button>
             </div>
 
@@ -140,6 +135,25 @@ export default function AdminDashboard() {
                 >
                     Next
                 </button>
+            </div>
+            <div className='mt-16'>
+                <EpochDurationManager />
+            </div>
+            <div className='flex justify-between mt-16'>
+                <p className='font-bold text-base'>Epoch Information</p>
+                <button
+                    onClick={handleProcessEpoch}
+                    disabled={processingEpoch}
+                    className={`px-4 py-2 flex items-center gap-2 rounded text-white ${
+                        processingEpoch ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+                    }`}
+                >
+                    {processingEpoch ? 'Processing...' : 'Process Epoch'}
+                </button>
+            </div>
+            <EpochProgressBar />
+            <div className='mt-16'>
+                <RewardAPRManager />
             </div>
         </div>
     );

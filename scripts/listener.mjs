@@ -17,7 +17,7 @@ const db = mongo.db('lsrwa');
 const collection = db.collection('requests');
 
 vault.on("DepositRequested", async (requestId, user, amount, timestamp) => {
-  console.log("📥 DepositRequest:", requestId.toString(), user, amount, timestamp);
+  console.log("DepositRequest:", requestId.toString(), user, amount, timestamp);
   await collection.insertOne({
     requestId: Number(requestId),
     user,
@@ -27,16 +27,16 @@ vault.on("DepositRequested", async (requestId, user, amount, timestamp) => {
     processed: false,
     executed: false
   });
-  console.log('✅ Deposit stored:', requestId.toString());
+  console.log('Deposit stored:', requestId.toString());
 });
 
 vault.on("DepositCancelled", async (requestId, user) => {
-  console.log("📥 DepositCancelled:", requestId.toString(), user);
+  console.log("DepositCancelled:", requestId.toString(), user);
   // Optionally write to local DB, file, or call internal API
 });
 
 vault.on("WithdrawRequested", async (requestId, user, amount, timestamp) => {
-  console.log("📥 WithdrawRequest:", requestId.toString(), user, amount, timestamp);
+  console.log("WithdrawRequest:", requestId.toString(), user, amount, timestamp);
   await collection.insertOne({
     requestId: Number(requestId),
     user,
@@ -46,11 +46,11 @@ vault.on("WithdrawRequested", async (requestId, user, amount, timestamp) => {
     processed: false,
     executed: false
   });
-  console.log('✅ Withdraw stored:', requestId.toString());
+  console.log('Withdraw stored:', requestId.toString());
 });
 
 vault.on("WithdrawExecuted", async(requestId, user, amount) => {
-  console.log("📥 WithdrawExecute:", requestId.toString(), user, amount);
+  console.log("WithdrawExecute:", requestId.toString(), user, amount);
   await collection.updateOne(
     { requestId: Number(requestId), user: user.toLowerCase(), isWithdraw: true },
     { $set: { executed: true } }
@@ -59,18 +59,18 @@ vault.on("WithdrawExecuted", async(requestId, user, amount) => {
 
 vault.on("DepositApproved", async(requestId, user, amount) => {
   try {
-    console.log("📥 DepositApprove:", requestId.toString(), user, amount);
+    console.log("DepositApprove:", requestId.toString(), user, amount);
     await collection.updateOne(
       { requestId: Number(requestId), user: user.toLowerCase(), isWithdraw: false },
       { $set: { processed: true } }
     );
     } catch (error) {
-    console.error("❌ Error handling DepositApproved event:", error);
+    console.error("Error handling DepositApproved event:", error);
   }
 });
 
 vault.on("WithdrawApproved", async(requestId, user, amount) => {
-  console.log("📥 WithdrawApproved:", requestId.toString(), user, amount);
+  console.log("WithdrawApproved:", requestId.toString(), user, amount);
   await collection.updateOne(
     { requestId: Number(requestId), user: user.toLowerCase(), isWithdraw: true },
     { $set: { processed: true } }
@@ -78,26 +78,26 @@ vault.on("WithdrawApproved", async(requestId, user, amount) => {
 });
 
 vault.on("PartialWithdrawalFilled", (requestId, user, amount, timestamp) => {
-  console.log("📥 PartialWithdrawalFill:", requestId.toString(), user, amount, timestamp);
+  console.log("PartialWithdrawalFill:", requestId.toString(), user, amount, timestamp);
   // Optionally write to local DB, file, or call internal API
 });
 
 vault.on("BorrowRequested", (user, amount) => {
-  console.log("📥 BorrowRequest:", user, amount);
+  console.log("BorrowRequest:", user, amount);
   // Optionally write to local DB, file, or call internal API
 });
 
 vault.on("CollateralDeposited", (user, amount) => {
-  console.log("📥 CollateralDeposit:", user, amount);
+  console.log("CollateralDeposit:", user, amount);
   // Optionally write to local DB, file, or call internal API
 });
 
 vault.on("CollateralLiquidated", (user, amount) => {
-  console.log("📥 CollateralLiquidat:", user, amount);
+  console.log("CollateralLiquidat:", user, amount);
   // Optionally write to local DB, file, or call internal API
 });
 
 vault.on("EpochProcessed", (currentEpoch, depositCounter, withdrawCounter) => {
-  console.log("📥 EpochProcess:", 'currentEpoch ->'+currentEpoch, 'depositCounter->'+depositCounter, 'withdrawCounter->'+withdrawCounter);
+  console.log("EpochProcess:", 'currentEpoch ->'+currentEpoch, 'depositCounter->'+depositCounter, 'withdrawCounter->'+withdrawCounter);
   // Optionally write to local DB, file, or call internal API
 });
