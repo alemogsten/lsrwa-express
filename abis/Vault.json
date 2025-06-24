@@ -30,12 +30,6 @@
         "anonymous": false,
         "inputs": [
             {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "requestId",
-                "type": "uint256"
-            },
-            {
                 "indexed": true,
                 "internalType": "address",
                 "name": "originator",
@@ -92,12 +86,6 @@
     {
         "anonymous": false,
         "inputs": [
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "originator",
-                "type": "address"
-            },
             {
                 "indexed": false,
                 "internalType": "uint256",
@@ -493,17 +481,12 @@
         "outputs": [
             {
                 "internalType": "uint256",
-                "name": "collateralAmount",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
                 "name": "amount",
                 "type": "uint256"
             },
             {
                 "internalType": "uint256",
-                "name": "startEpoch",
+                "name": "epochStart",
                 "type": "uint256"
             },
             {
@@ -529,6 +512,19 @@
                 "internalType": "address",
                 "name": "",
                 "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "borrowingUSDC",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
             }
         ],
         "stateMutability": "view",
@@ -588,19 +584,6 @@
     },
     {
         "inputs": [],
-        "name": "currentCollaterals",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
         "name": "currentEpoch",
         "outputs": [
             {
@@ -640,32 +623,6 @@
     {
         "inputs": [],
         "name": "currentEpochId",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "currentLSRWA",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "currentUSDC",
         "outputs": [
             {
                 "internalType": "uint256",
@@ -858,23 +815,10 @@
         "type": "function"
     },
     {
-        "inputs": [],
-        "name": "lastEpochBlock",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
         "inputs": [
             {
                 "internalType": "address",
-                "name": "originator",
+                "name": "outAddress",
                 "type": "address"
             }
         ],
@@ -983,16 +927,30 @@
         "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            }
-        ],
+        "inputs": [],
         "name": "repayBorrow",
         "outputs": [],
         "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "repaymentRequired",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "repaymentRequiredEpochId",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
         "type": "function"
     },
     {
@@ -1057,6 +1015,19 @@
             }
         ],
         "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "uint256",
+                "name": "ratio",
+                "type": "uint256"
+            }
+        ],
+        "name": "setCollateralRatio",
+        "outputs": [],
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
