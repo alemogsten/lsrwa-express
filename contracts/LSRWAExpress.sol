@@ -18,7 +18,6 @@ contract LSRWAExpress {
     address public admin;
     Epoch public currentEpoch;
     uint256 public epochDuration; // in blocks
-    uint256 public lastEpochBlock;
     uint256 public rewardAPR;
     uint256 public maxEpochsBeforeLiquidation;
 
@@ -120,7 +119,6 @@ contract LSRWAExpress {
         usdc = IERC20(_usdc);
         lsrwa = IERC20(_lsrwa);
         epochDuration = 40320; // ~1 week in blocks
-        lastEpochBlock = block.number;
         depositCounter = 0;
         withdrawCounter = 0;
         poolUSDC = 0;
