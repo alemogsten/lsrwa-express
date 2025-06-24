@@ -3,6 +3,8 @@ import clientPromise from '@/lib/mongo';
 
 export async function GET(request) {
   const client = await clientPromise;
+  console.log('db', process.env.MONGO_DB);
+  
   const db = client.db(process.env.MONGO_DB);
 
   const url = new URL(request.url);

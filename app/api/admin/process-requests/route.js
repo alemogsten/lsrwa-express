@@ -4,7 +4,7 @@ import { ethers } from "ethers";
 import vaultAbi from "@/abis/Vault.json";
 import clientPromise from '@/lib/mongo';
 
-export async function POST(request) {
+export async function POST() {
   try {
     const client = await clientPromise;
     const db = client.db(process.env.MONGO_DB);
