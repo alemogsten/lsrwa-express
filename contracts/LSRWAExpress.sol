@@ -318,8 +318,8 @@ contract LSRWAExpress {
         }
 
         currentEpoch = Epoch({
-            startBlock: currentEpoch.endBlock + 1,
-            endBlock: currentEpoch.endBlock + epochDuration,
+            startBlock: block.number,
+            endBlock: block.number + epochDuration,
             totalDeposits: totalActiveDeposits,
             totalWithdrawals: totalWithdrawals,
             rewardsDistributed: 0,
