@@ -3,8 +3,8 @@ import clientPromise from '@/lib/mongo';
 import { NextResponse } from 'next/server';
 
 
-export async function POST(req) {
-  const { address } = await req.json();
+export async function POST(request) {
+  const { address } = await request.json();
   const client = await clientPromise;
   const db = client.db(process.env.MONGO_DB);
   

@@ -1,11 +1,11 @@
 // app/api/admin/requests/route.js
 import clientPromise from '@/lib/mongo';
 
-export async function GET(req) {
+export async function GET(request) {
   const client = await clientPromise;
   const db = client.db(process.env.MONGO_DB);
 
-  const url = new URL(req.url);
+  const url = new URL(request.url);
   const page = parseInt(url.searchParams.get('page') || '1');
   const limit = parseInt(url.searchParams.get('limit') || '10');
   const status = url.searchParams.get('status'); // 'pending', 'approved', 'executed'
