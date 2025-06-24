@@ -1,10 +1,10 @@
-// app/api/admin/process-epoch/route.js
+// app/api/admin/process-requests/route.js
 import { NextResponse } from "next/server";
 import { ethers } from "ethers";
 import vaultAbi from "@/abis/Vault.json";
 import clientPromise from '@/lib/mongo';
 
-export async function POST() {
+export async function POST(request) {
   try {
     const client = await clientPromise;
     const db = client.db(process.env.MONGO_DB);
