@@ -53,8 +53,6 @@ contract LSRWAExpress {
     uint256 public borrowCounter;
     uint256 public currentEpochId;
 
-    bool public epochInitialized;
-
     // --- Structs ---
     struct DepositRequest {
         address user;
@@ -317,17 +315,9 @@ contract LSRWAExpress {
             currentEpoch.rewardsDistributed = epochReward;
         }
 
-        uint256 startBlock;
-        if (!epochInitialized) {
-            startBlock = block.number;
-            epochInitialized = true;
-        } else {
-            startBlock = currentEpoch.endBlock + 1;
-        }
-
         currentEpoch = Epoch({
-            startBlock: startBlock,
-            endBlock: startBlock + epochDuration,
+            startBlock: currentEpochId == 0 ? block.number : currentEpoch.endBlock + 1,
+            endBlock: currentEpochId == 0 ? block.number + epochDuration : currentEpoch.endBlock + 1 + epochDuration,
             totalDeposits: totalActiveDeposits,
             totalWithdrawals: totalWithdrawals,
             rewardsDistributed: 0,
