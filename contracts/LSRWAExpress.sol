@@ -118,6 +118,7 @@ contract LSRWAExpress {
         usdc = IERC20(_usdc);
         lsrwa = IERC20(_lsrwa);
         epochDuration = 40320; // ~1 week in blocks
+        maxEpochsBeforeLiquidation = 2;
     }
 
     function requestDeposit(uint256 amount) external returns (uint256 requestId) {
@@ -371,7 +372,7 @@ contract LSRWAExpress {
         // Withdraw LSRWA to outAddress and convert LSRWA to USDC off-chain and send USDC here again (it's not in contract)
         lsrwa.safeTransfer(outAddress, liquidateLSRWA);
         repaymentRequiredEpochId = 0;
-        
+
         emit CollateralLiquidated(liquidateLSRWA);
     }
 }
