@@ -18,12 +18,17 @@ export async function GET(request) {
   if (type === 'deposit' || type === 'withdraw') query.isWithdraw = type === 'withdraw';
 
   const total = await db.collection('requests').countDocuments(query);
-  const requests = await db
+  const requests = url.searchParams.get('page') ? await db
     .collection('requests')
     .find(query)
     .sort({ timestamp: -1 })
     .skip((page - 1) * limit)
     .limit(limit)
+    .toArray() : 
+    await db
+    .collection('requests')
+    .find(query)
+    .sort({ timestamp: -1 })
     .toArray();
 
   return Response.json({ data: requests, total });

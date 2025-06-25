@@ -11,7 +11,7 @@ export default function RewardAPRManager() {
   const [isPending, setIsPending] = useState(false);
 
   // Read rewardAPR
-  const { data: rewardAPR, refetch } = useReadContract({
+  const { data: rewardAPR, refetch, isLoading: isReading } = useReadContract({
     abi: vaultAbi,
     address: VAULT_ADDRESS,
     functionName: 'rewardAPR',
@@ -28,7 +28,7 @@ export default function RewardAPRManager() {
         functionName: 'setRewardAPR',
         args: [BigInt(newAPR)],
       });
-      setNewAPR('');
+      // setNewAPR('');
       refetch(); // refresh rewardAPR after update
     } catch (err) {
       console.error('Failed to set rewardAPR:', err);
@@ -40,7 +40,7 @@ export default function RewardAPRManager() {
   return (
     <div className="space-y-4">
       <p className="text-lg font-medium">
-        Current Reward APR: {rewardAPR ? `${rewardAPR.toString()}%` : 'Loading...'}
+        Current Reward APR: {!isReading ? `${rewardAPR.toString()}%` : 'Loading...'}
       </p>
 
       <input
