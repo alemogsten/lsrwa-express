@@ -370,7 +370,8 @@ contract LSRWAExpress {
 
         // Withdraw LSRWA to outAddress and convert LSRWA to USDC off-chain and send USDC here again (it's not in contract)
         lsrwa.safeTransfer(outAddress, liquidateLSRWA);
-
+        repaymentRequiredEpochId = 0;
+        
         emit CollateralLiquidated(liquidateLSRWA);
     }
 }
