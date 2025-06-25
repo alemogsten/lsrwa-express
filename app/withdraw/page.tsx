@@ -1,12 +1,12 @@
 'use client';
 
-import ExecuteWithdrawForm from '../components/ExecuteWithdrawForm';
+import WithdrawForm from '../components/WithdrawForm';
 
 export default function Withdraw() {
 
    return (
     <main>
-        <ExecuteWithdrawForm />
+        <WithdrawForm />
     </main>
    );
 }

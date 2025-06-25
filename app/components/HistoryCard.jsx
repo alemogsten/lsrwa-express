@@ -1,11 +1,58 @@
 'use client';
 
+import { useState } from 'react';
 import clsx from "clsx";
 import { format } from 'date-fns';
 import Image from 'next/image';
+import { ethers } from "ethers";
+
+import { connectWallet } from "@/utils/wallet";
+import vaultAbi from "@/abis/Vault.json";
 
 
-export default function HistoryCard({ isWithdraw, id, timestamp, amount, status, handleCancelDeposit }) {
+export default function HistoryCard({ isWithdraw, id, timestamp, amount, processed, fetchRequests, executed }) {
+  const [cancelling, setCancelling] = useState(false);
+  const [receiving, setReceiving] = useState(false);
+
+  
+  const cancelDeposit = async () => {
+    if (cancelling) return;
+    const { signer } = await connectWallet();
+      try {
+        if (!signer) return alert("Connect wallet first");
+        setCancelling(true);
+  
+        const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
+        const tx = await vault.cancelDepositRequest(BigInt(id));
+        await tx.wait();
+        
+        setCancelling(false);
+        fetchRequests();
+      } catch (err) {
+        setCancelling(false);
+        alert('Failed deposit cancel:' + (err?.reason || err?.message));
+      }
+    }
+
+    const executeWithdraw = async () => {
+      if(receiving) return;
+      try {
+        const { signer } = await connectWallet();
+        if (!signer) return alert("Connect wallet first");
+        setReceiving(true);
+        
+          const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
+          const tx = await vault.executeWithdraw(BigInt(id));
+          await tx.wait();
+          setReceiving(false);
+          alert("Withdraw executed!");
+          fetchRequests();
+        } catch (err) {
+          console.error(err);
+          setReceiving(false);
+          alert("Error: " + (err?.reason || err?.message));
+        }
+      };
 
   return (
     <div className="flex gap-2 items-center">
@@ -21,25 +68,31 @@ export default function HistoryCard({ isWithdraw, id, timestamp, amount, status,
         </div>
         <div className="flex flex-col">
           <p className="mt-2 text-right text-[18px] font-bold leading-[22px] text-black">${amount}</p>
-          <div className={clsx('rounded-[100px] px-[12px] py-[2px]', status === 1 ? 'bg-[#E0710333] text-[#E07103]' : (status === 2 ? 'bg-[#E6F7EB] text-[#239942]' : 'bg-[#E1514129] text-[#E15141]'))}>
+          <div className={clsx('rounded-[100px] px-[12px] py-[2px]', !processed ? 'bg-[#E0710333] text-[#E07103]' : 'bg-[#E6F7EB] text-[#239942]' )}>
             <p className="flex gap-1 text-base leading-[14px] font-medium">
-              {status === 1 && <Image src="/assets/clock.svg" alt="Plus Icon" width={12} height={12} />}
-              {status === 1? 'Pending' : (status === 2? 'Completed' : 'Failed')}</p>
+              {!processed && <Image src="/assets/clock.svg" alt="Plus Icon" width={12} height={12} />}
+              {!processed && 'Pending'} {processed && executed && 'Completed'}</p>
           </div>
         </div>
       </div>
       {
-        status === 1 &&
-        <button className="mt-6 flex flex-col items-center space-y-2 hover:opacity-80 transition"
-        onClick={handleCancelDeposit}>
+        !isWithdraw && !processed &&
+        <button className="mt-6 flex flex-col items-center space-y-2 hover:opacity-80 transition disabled:opacity-50"
+        disabled={cancelling}
+        onClick={cancelDeposit}>
           <Image
             src="/assets/cancel.png"
             alt="Icon"
             width={20} height={20}
             className="rounded-full object-cover"
           />
-          <span className="text-[12px] text-gray">Cancel</span>
+          <span className="text-[12px] text-gray">{cancelling ? 'Canceling' : 'Cancel'}</span>
         </button>
+      }
+      {
+        isWithdraw && processed && <button className="mt-6 flex flex-col items-center space-y-2 hover:opacity-80 transition disabled:opacity-50"
+        disabled={receiving}
+        onClick={executeWithdraw}>{receiving ? 'Receiving' : 'Receive'}</button>
       }
     </div>
   );

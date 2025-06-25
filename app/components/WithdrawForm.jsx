@@ -7,7 +7,7 @@ import vaultAbi from "@/abis/Vault.json";
 import erc20Abi from "@/abis/ERC20.json";
 import { connectWallet } from "@/utils/wallet";
 
-export default function DepositForm() {
+export default function WithdrawForm() {
   const {
     address,
     isConnected,
@@ -19,30 +19,20 @@ export default function DepositForm() {
   const [amount, setAmount] = useState("");
   const [status, setStatus] = useState("");
 
-  const handleDeposit = async () => {
+  const handleWithdraw = async () => {
     try {
       const { signer } = await connectWallet();
       if (!isConnected) return alert("Wallet not connected");
-      const usdc = new ethers.Contract(process.env.NEXT_PUBLIC_USDC_ADDRESS, erc20Abi, signer);
+
       const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
 
       const parsedAmount = ethers.parseUnits(amount, parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS)); // USDC uses 6 decimals
 
-      setStatus("Checking allowance...");
-      const owner = await signer.getAddress();
-      const allowance = await usdc.allowance(owner, process.env.NEXT_PUBLIC_VAULT_ADDRESS);
+      setStatus("Requesting withdraw...");
+      const withdrawTx = await vault.requestWithdraw(parsedAmount);
+      await withdrawTx.wait();
 
-      if (allowance < parsedAmount) {
-        setStatus("Approving USDC...");
-        const approveTx = await usdc.approve(process.env.NEXT_PUBLIC_VAULT_ADDRESS, parsedAmount);
-        await approveTx.wait();
-      }
-
-      setStatus("Requesting deposit...");
-      const depositTx = await vault.requestDeposit(parsedAmount);
-      await depositTx.wait();
-
-      setStatus("Requested deposit!");
+      setStatus("Requested withdraw!");
     } catch (error) {
       console.error(error);
       setStatus("Error: " + (error?.reason || error?.message));
@@ -59,10 +49,10 @@ export default function DepositForm() {
         onChange={(e) => setAmount(e.target.value)}
       />
       <button
-        onClick={handleDeposit}
+        onClick={handleWithdraw}
         className="bg-green-600 text-white px-4 py-2 rounded"
       >
-        Deposit USDC
+        Withdraw USDC
       </button>
       <p className="text-sm">{status}</p>
     </div>

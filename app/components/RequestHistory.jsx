@@ -5,15 +5,18 @@ import clsx from "clsx";
 import HistoryCard from "./HistoryCard";
 import WalletConnectButton from "./WalletConnectButton";
 
+
 import { useAccount } from 'wagmi';
 import axios from 'axios';
 
 
 export default function RequestHistory() {
   const { address, isConnected } = useAccount();
+  
+
     const [requests, setRequests] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [cancelling, setCancelling] = useState(false);
+    
   
     useEffect(() => {
       if (!isConnected || !address) return;
@@ -29,21 +32,7 @@ export default function RequestHistory() {
         .finally(() => setLoading(false));
     }
 
-    const cancelDeposit = (requestId) => {
-      if (cancelling) return;
-      setCancelling(true);
-      
-      axios
-        .post('/api/cancel-deposit', { requestId })
-        .then((res) => {
-          setCancelling(false);
-          fetchRequests()
-        })
-        .catch(() => {
-          setCancelling(false);
-          alert('Failed deposit cancel')
-        });
-    }
+    
 
   return (
     <div className={clsx('bg-white shadow-[1px_3px_4px_1px_rgba(0,0,0,0.12)] p-[24px] text-center h-full', isConnected ? 'rounded-[16px]' : 'rounded-[70px]')}>
@@ -53,7 +42,7 @@ export default function RequestHistory() {
         <p>No active requests found.</p>
       ) :
         requests.map(history => (
-          <HistoryCard handleCancelDeposit={() => cancelDeposit(history.requestId)} key={history.requestId} isWithdraw={history.isWithdraw} timestamp={history.timestamp} id={history.requestId} amount={history.amount} status={history.processed ? 2 : 1} />  
+          <HistoryCard fetchRequests={fetchRequests} key={history.requestId} isWithdraw={history.isWithdraw} timestamp={history.timestamp} id={history.requestId} amount={history.amount} processed={history.processed} executed={history.executed} />  
         ))
       }
       <div className="mt-8 justify-items-center">
