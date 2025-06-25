@@ -5,10 +5,8 @@ import { format } from 'date-fns';
 import Image from 'next/image';
 
 
-export default function HistoryCard({ isWithdraw, id, timestamp, amount, status }) {
-   const handleCancelClick = () => {
-      console.log(id);
-    };
+export default function HistoryCard({ isWithdraw, id, timestamp, amount, status, handleCancelDeposit }) {
+
   return (
     <div className="flex gap-2 items-center">
       <div className="mt-6 flex items-center w-full justify-between bg-[#F6F8F9] rounded-[12px] py-[8px] px-[12px]">
@@ -33,7 +31,7 @@ export default function HistoryCard({ isWithdraw, id, timestamp, amount, status 
       {
         status === 1 &&
         <button className="mt-6 flex flex-col items-center space-y-2 hover:opacity-80 transition"
-        onClick={handleCancelClick}>
+        onClick={handleCancelDeposit}>
           <Image
             src="/assets/cancel.png"
             alt="Icon"

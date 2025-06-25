@@ -32,7 +32,7 @@ vault.on("DepositRequested", async (requestId, user, amount, timestamp) => {
 
 vault.on("DepositCancelled", async (requestId, user) => {
   console.log("DepositCancelled:", requestId.toString(), user);
-  // Optionally write to local DB, file, or call internal API
+  await collection.deleteOne({ requestId: Number(requestId) });
 });
 
 vault.on("WithdrawRequested", async (requestId, user, amount, timestamp) => {
