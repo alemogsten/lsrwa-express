@@ -5,14 +5,15 @@ import { ethers } from 'ethers';
 import { format, formatDuration, intervalToDuration } from 'date-fns';
 import vaultAbi from '@/abis/Vault.json';
 
-const AVERAGE_BLOCK_TIME_MS = 12 * 1000; // 12 seconds
+const AVERAGE_BLOCK_TIME_MS = process.env.NEXT_PUBLIC_BLOCK_TIME * 1000;
 const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_SEPOLIA_RPC);
 const vaultAddress = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
 
-export default function EpochProgressBar() {
+export default function EpochProgressBar({refresh=false}) {
   const [progress, setProgress] = useState(0);
   const [timeLeftMs, setTimeLeftMs] = useState(0);
   const [startTimeMs, setStartTimeMs] = useState(0);
+  const [endTimestampMs, setEndTimestampMs] = useState(0);
 
   useEffect(() => {
     let interval;
@@ -31,9 +32,11 @@ export default function EpochProgressBar() {
       setStartTimeMs(startTimestampMs);
       
       const endTimestampMs = startTimestampMs + durationMs;
+      setEndTimestampMs(endTimestampMs)
 
       interval = setInterval(() => {
         const now = Date.now();
+        
         const timeLeft = Math.max(0, endTimestampMs - now);
         
         const progressPercent = Math.min(100, ((durationMs - timeLeft) / durationMs) * 100);
@@ -46,22 +49,25 @@ export default function EpochProgressBar() {
     getEpochBlocks();
 
     return () => clearInterval(interval);
-  }, []);
+  }, [refresh]);
 
   const formattedTimeLeft = formatDuration(
     intervalToDuration({ start: 0, end: timeLeftMs }),
-    { format: ['minutes', 'seconds'] }
+    { format: ['days','hours','minutes', 'seconds'] }
   );
 
   const formattedStart = startTimeMs
     ? format(startTimeMs, 'MMM d, yyyy HH:mm')
+    : 'Loading...';
+  const formattedEnd = endTimestampMs
+    ? format(endTimestampMs, 'MMM d, yyyy HH:mm')
     : 'Loading...';
 
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-1 text-sm text-gray-500">
         <span className="text-left">{formattedStart}</span>
-        <span className="text-right">{formattedTimeLeft || 'Completed'}</span>
+        <span className="text-right">{formattedEnd || 'Completed'}</span>
       </div>
       <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
         <div

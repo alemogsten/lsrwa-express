@@ -8,11 +8,13 @@ import EpochProgressBar from '../EpochProgressBar';
 export default function ProcessEpoch() {
 
     const [processingEpoch, setProcessingEpoch] = useState(false);
+    const [refresh, setRefresh] = useState(false);
     const handleProcessEpoch = async () => {
         setProcessingEpoch(true);
         try {
             const res = await axios.post('/api/admin/process-epoch');
             alert(res.data.success ? "Epoch processed!" : "Failed!");
+            setRefresh(true);
         } catch (err) {
             console.error("Failed to process epoch:", err);
             alert("Error processing epoch");
@@ -35,7 +37,7 @@ export default function ProcessEpoch() {
                     {processingEpoch ? 'Processing...' : 'Process Epoch'}
                 </button>
             </div>
-            <EpochProgressBar />
+            <EpochProgressBar refresh={refresh}/>
             
         </div>
     );

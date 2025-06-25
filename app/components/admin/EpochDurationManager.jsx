@@ -1,17 +1,19 @@
 'use client';
 
-import { useContractRead, useContractWrite } from 'wagmi';
 import { useState } from 'react';
+import { useContractRead, useContractWrite } from 'wagmi';
+import { format, formatDuration, intervalToDuration } from 'date-fns';
 import vaultAbi from '@/abis/Vault.json';
 
 const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
+const AVERAGE_BLOCK_TIME_MS = process.env.NEXT_PUBLIC_BLOCK_TIME * 1000;
 
 export default function EpochDurationManager() {
   const [newDuration, setNewDuration] = useState('');
   const [isPending, setIsPending] = useState(false);
 
   // Read current epoch duration
-  const { data: epochDuration } = useContractRead({
+  const { data: epochDuration, isLoading: isReading } = useContractRead({
     address: VAULT_ADDRESS,
     abi: vaultAbi,
     functionName: 'epochDuration',
@@ -30,7 +32,7 @@ export default function EpochDurationManager() {
     try {
       setIsPending(true);
       await writeAsync({
-        args: [BigInt(newDuration)],
+        args: [BigInt(newDuration / AVERAGE_BLOCK_TIME_MS)],
       });
       setNewDuration('');
     } catch (err) {
@@ -40,16 +42,23 @@ export default function EpochDurationManager() {
     }
   };
 
+  const formattedTimeLeft = formatDuration(
+      intervalToDuration({ start: 0, end: parseInt(epochDuration) * parseInt(AVERAGE_BLOCK_TIME_MS) }),
+      { format: ['days','hours','minutes', 'seconds'] }
+  );
+
   return (
     <div className="space-y-4">
-      <p className="text-gray-700">
+      <p className='font-semibold text-lg mb-0'>Epoch Duration</p>
+      <p className="mb-2">
         Current Epoch Duration:{' '}
-        {epochDuration ? `${epochDuration.toString()} blocks` : 'Loading...'}
+        {!isReading ? 
+        `${epochDuration*BigInt(AVERAGE_BLOCK_TIME_MS)} s (${formattedTimeLeft})` : 'Loading...'}
       </p>
 
       <input
         type="number"
-        placeholder="New duration (blocks)"
+        placeholder="New duration (s)"
         className="border p-2 rounded"
         value={newDuration}
         onChange={(e) => setNewDuration(e.target.value)}
