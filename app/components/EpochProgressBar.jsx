@@ -33,8 +33,8 @@ export default function EpochProgressBar({refresh=false}) {
       
       const endTimestampMs = startTimestampMs + durationMs;
       setEndTimestampMs(endTimestampMs)
-
-      interval = setInterval(() => {
+      displayTime()
+      function displayTime() {
         const now = Date.now();
         
         const timeLeft = Math.max(0, endTimestampMs - now);
@@ -43,6 +43,10 @@ export default function EpochProgressBar({refresh=false}) {
 
         setTimeLeftMs(timeLeft);
         setProgress(progressPercent);
+      }
+
+      interval = setInterval(() => {
+        displayTime();
       }, 60000);
     }
 
@@ -56,24 +60,37 @@ export default function EpochProgressBar({refresh=false}) {
     { format: ['days','hours','minutes', 'seconds'] }
   );
 
-  const formattedStart = startTimeMs
-    ? format(startTimeMs, 'MMM d, yyyy HH:mm')
+  const formattedStartDate = startTimeMs
+    ? format(startTimeMs, 'MMM d, yyyy')
+    : 'Loading...';
+  const formattedStartTime = startTimeMs
+    ? format(startTimeMs, 'HH:mm')
     : 'Loading...';
   const formattedEnd = endTimestampMs
     ? format(endTimestampMs, 'MMM d, yyyy HH:mm')
     : 'Loading...';
 
   return (
-    <div className="w-full">
-      <div className="flex justify-between items-center mb-1 text-sm text-gray-500">
-        <span className="text-left">{formattedStart}</span>
-        <span className="text-right">{formattedEnd || 'Completed'}</span>
+    <div className='lg:flex justify-between gap-2 w-full mt-4 items-center whitespace-nowrap'>
+      <div className='flex gap-2'>
+        <div className='text-center'>
+          <p className='font-bold text-center'>{formattedStartDate}</p>
+          <p className='font-medium text-gray text-center'>Start Date</p>
+        </div>
+        <div className='text-center'>
+          <p className='font-bold text-center'>{formattedStartTime} UTC</p>
+          <p className='font-medium text-gray text-center'>Start Time</p>
+        </div>
       </div>
-      <div className="w-full h-3 bg-gray-200 rounded-full overflow-hidden">
+      <div className="w-full h-3 bg-[#DEF1E6] rounded-full overflow-hidden">
         <div
           className="h-full bg-green-500 transition-all duration-1000"
           style={{ width: `${progress}%` }}
         ></div>
+      </div>
+      <div className='text-center'>
+        <p className='font-bold text-center'>{formattedTimeLeft}</p>
+        <p className='font-medium text-gray text-center'>Expected Next Epoch In</p>
       </div>
     </div>
   );

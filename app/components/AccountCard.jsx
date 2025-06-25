@@ -1,18 +1,11 @@
 'use client';
 
-import Image from 'next/image';
-import { useWallet } from '@/hooks/useWallet';
+import { useDepositorAccount } from '@/hooks/useDepositorAccount';
 import ToggleSwitchButton from "./ToggleSwitchButton";
 
 export default function AccountCard() {
-  const {
-    address,
-    isConnected,
-    disconnect,
-    balance,
-    symbol,
-    isBalanceLoading,
-  } = useWallet();
+
+  const { deposited, reward, isLoading } = useDepositorAccount();
 
 
   const handleAutoCompoundClick = () => {
@@ -30,12 +23,12 @@ export default function AccountCard() {
       <div className='flex justify-between w-full'>
         <div className='text-center'>
           <p className='text-base font-medium leading-[22px]'>Current Balance</p>
-          <p className='text-[24px] font-bold leading-[30px]'>$ {balance}</p>
+          <p className='text-[24px] font-bold leading-[30px]'>$ {isLoading ? 0 : deposited}</p>
           <p className='text-[14px] text-gray font-medium leading-[22px]'>Currently Deposited</p>
         </div>
         <div className='text-center'>
           <p className='text-base font-medium leading-[22px]'>Available Yield</p>
-          <p className='text-[24px] font-bold leading-[30px]'>$ {balance}</p>
+          <p className='text-[24px] font-bold leading-[30px]'>$ {isLoading ? 0 : deposited + reward}</p>
           <p className='text-[14px] text-gray font-medium leading-[22px]'>Total earnings To date</p>
         </div>
       </div>

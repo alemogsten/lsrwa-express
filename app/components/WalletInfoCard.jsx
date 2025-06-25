@@ -1,8 +1,9 @@
 'use client';
 
-import Image from 'next/image';
+import { useState } from 'react';
 import { useWallet } from '@/hooks/useWallet';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 
 export default function WalletInfoCard() {
   const {
@@ -13,6 +14,8 @@ export default function WalletInfoCard() {
     symbol,
     isBalanceLoading,
   } = useWallet();
+
+  const [isVisible, setIsVisible] = useState(false);
 
   const router = useRouter();
 
@@ -25,12 +28,16 @@ export default function WalletInfoCard() {
   const handleSwapClick = () => {
     router.push('/swap');
   };
+  const handleDisplayClick = () => {
+    setIsVisible(!isVisible);
+  };
 
   return (
     <div className="bg-gradient-to-b from-[#61CD81] to-[#239942] rounded-[20px] shadow-[1px_3px_4px_0px_rgba(0,0,0,0.15)] p-[24px] text-white">
       <div className="relative w-max">
         <button type="button" id="dropdownToggle"
-          className="px-4 py-2 flex gap-2 items-center bg-[#61CD81] px-[4px] py-[2px] rounded-full text-white text-base font-medium  cursor-pointer">
+        onClick={handleDisplayClick}
+          className="flex gap-2 items-center bg-[#61CD81] px-[4px] py-[2px] rounded-full text-white text-base font-medium  cursor-pointer">
           <Image
             src="/assets/contract.png"
             alt="contract"
@@ -46,7 +53,7 @@ export default function WalletInfoCard() {
           </svg>
         </button>
 
-        <ul id="dropdownMenu" className='absolute hidden [box-shadow:0_8px_19px_-7px_rgba(6,81,237,0.2)] bg-white py-2 z-[1000] min-w-full w-max divide-y divide-gray-300 max-h-96 overflow-auto'>
+        <ul id="dropdownMenu" className={`absolute ${isVisible ? '' : 'hidden'} [box-shadow:0_8px_19px_-7px_rgba(6,81,237,0.2)] bg-white py-2 z-[1000] min-w-full w-max divide-y divide-gray-300 max-h-96 overflow-auto`}>
           <li className="dropdown-item py-2.5 px-5 flex items-center hover:bg-slate-100 text-slate-900 text-sm cursor-pointer" onClick={disconnect}>
             <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" className="w-4 h-4 mr-3"
               viewBox="0 0 6.35 6.35">
