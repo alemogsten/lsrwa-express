@@ -8,7 +8,7 @@ const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
 import VAULT_ABI from '@/abis/Vault.json';
 
 export default function CollateralRatioSetting() {
-  const [input, setInput] = useState('');
+  const [collateralRatio, setCollateralRatio] = useState('');
   const [loading, setLoading] = useState(false);
 
   // Read collateralRatio from contract
@@ -54,14 +54,14 @@ export default function CollateralRatioSetting() {
       <div className="flex gap-2 items-center mt-2">
         <input
           type="number"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
+          value={collateralRatio}
+          onChange={(e) => setCollateralRatio(e.target.value)}
           placeholder="Enter new value"
           className="flex-1 border px-3 py-2 rounded"
         />%
         <button
           onClick={handleSubmit}
-          disabled={loading}
+          disabled={loading || !collateralRatio}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50"
         >
           {loading ? 'Updating...' : 'Update'}

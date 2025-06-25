@@ -61,9 +61,9 @@ export default function ProcessRequests() {
                 </select>
                 <button
                     onClick={handleProcessRequests}
-                    disabled={processingRequests}
+                    disabled={processingRequests || total === 0}
                     className={`px-4 py-2 flex items-center gap-2 rounded text-white ${
-                        processingRequests ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+                        processingRequests ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 disabled:opacity-50' 
                     }`}
                 >
                     {processingRequests ? 'Processing...' : 'Process Requests'}

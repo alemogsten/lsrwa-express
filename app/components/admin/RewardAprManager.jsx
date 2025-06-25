@@ -28,7 +28,7 @@ export default function RewardAPRManager() {
         functionName: 'setRewardAPR',
         args: [BigInt(newAPR)],
       });
-      // setNewAPR('');
+      setNewAPR('');
       refetch(); // refresh rewardAPR after update
     } catch (err) {
       console.error('Failed to set rewardAPR:', err);
@@ -38,17 +38,16 @@ export default function RewardAPRManager() {
   };
 
   return (
-    <div className="space-y-4">
-      <p className="text-lg font-medium">
-        Current Reward APR: {!isReading ? `${rewardAPR.toString()}%` : 'Loading...'}
-      </p>
+    <div className="max-w-md">
+      <p className="text-lg font-semibold mb-0">Reward APR</p>
+      <p className='mb-2'>Current Reward APR: {!isReading ? `${rewardAPR.toString()}%` : 'Loading...'}</p>
 
       <input
         type="number"
         placeholder="Enter new APR"
         value={newAPR}
         onChange={(e) => setNewAPR(e.target.value)}
-        className="border p-2 rounded"
+        className="flex-1 border px-3 py-2 rounded"
       />
 
       <button

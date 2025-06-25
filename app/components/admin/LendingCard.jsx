@@ -35,7 +35,7 @@ export default function LendingCard() {
       </div>
       <div>
       {repaymentRequiredEpochId == 0 || undefined ? 
-          <button className='px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50'>Require Repayment</button> 
+          <button disabled={!borrowingUSDC} className='px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50'>Require Repayment</button> 
           : <div><p className='text-red-500'>Required repayment</p>{currentEpochId && repaymentRequiredEpochId && <p className='text-red-500'>{currentEpochId - repaymentRequiredEpochId}</p>}</div>}
       </div>
     </div>
