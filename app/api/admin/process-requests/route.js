@@ -23,7 +23,7 @@ export async function POST() {
     const approvedRequests = data.map((r) => ({
       user: r.user,
       requestId: r.requestId,
-      amount: r.amount,
+      amount: BigInt(r.amount * Math.pow(10, process.env.NEXT_PUBLIC_USDC_DECIMALS)),
       timestamp: r.timestamp,
       isWithdraw: r.isWithdraw,
     }));
