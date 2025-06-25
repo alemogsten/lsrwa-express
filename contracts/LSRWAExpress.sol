@@ -119,6 +119,7 @@ contract LSRWAExpress {
         lsrwa = IERC20(_lsrwa);
         epochDuration = 40320; // ~1 week in blocks
         maxEpochsBeforeLiquidation = 2;
+        currentEpochId = 1;
     }
 
     function requestDeposit(uint256 amount) external returns (uint256 requestId) {
@@ -179,8 +180,8 @@ contract LSRWAExpress {
         uint256 reward = unclaimedRewards[msg.sender];
         require(reward > 0, "No rewards");
 
-        unclaimedRewards[msg.sender] = 0;
         usdc.safeTransfer(msg.sender, reward);
+        unclaimedRewards[msg.sender] = 0;
         emit RewardsClaimed(msg.sender, reward);
     }
 
@@ -320,8 +321,8 @@ contract LSRWAExpress {
         // }
 
         currentEpoch = Epoch({
-            startBlock: currentEpochId == 0 ? block.number : currentEpoch.endBlock + 1,
-            endBlock: currentEpochId == 0 ? block.number + epochDuration : currentEpoch.endBlock + 1 + epochDuration,
+            startBlock: currentEpochId == 1 ? block.number : currentEpoch.endBlock + 1,
+            endBlock: currentEpochId == 1 ? block.number + epochDuration : currentEpoch.endBlock + 1 + epochDuration,
             totalDeposits: totalActiveDeposits,
             totalWithdrawals: totalWithdrawals,
             rewardsDistributed: epochReward,
