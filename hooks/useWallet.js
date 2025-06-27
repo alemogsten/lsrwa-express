@@ -23,11 +23,21 @@ export function useWallet() {
 
   const {
     data: usdcBalance,
-    isPending: isBalanceLoading,
-    refetch: refetchBalance,
+    isPending: isUSDCBalanceLoading,
+    refetch: refetchUSDCBalance,
   } = useBalance({
     address,
     token: process.env.NEXT_PUBLIC_USDC_ADDRESS,
+    watch: true,
+  });
+
+  const {
+    data: tokenBalance,
+    isPending: isTokenBalanceLoading,
+    refetch: refetchTokenBalance,
+  } = useBalance({
+    address,
+    token: process.env.NEXT_PUBLIC_TOKEN_ADDRESS,
     watch: true,
   });
 
@@ -41,9 +51,11 @@ export function useWallet() {
     disconnect,
     balance: usdcBalance?.value ? formatUnits(usdcBalance.value, decimals) : '0.0',
     symbol: usdcBalance?.symbol ?? '',
-    // balance: balanceData?.formatted ?? '0.0',
+    tokenBalance: !isTokenBalanceLoading ? formatUnits(tokenBalance.value, 18) : '0.0',
     // symbol: balanceData?.symbol ?? '',
-    isBalanceLoading,
-    refetchBalance,
+    isTokenBalanceLoading,
+    isUSDCBalanceLoading,
+    refetchUSDCBalance,
+    refetchTokenBalance,
   };
 }
