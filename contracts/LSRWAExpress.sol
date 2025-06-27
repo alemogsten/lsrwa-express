@@ -305,6 +305,7 @@ contract LSRWAExpress {
             if (req.isWithdraw) {
                 WithdrawRequest storage wReq = withdrawRequests[req.requestId];
                 if(wReq.processed) continue;
+                if(users[req.user].deposit < req.amount) continue;
 
                 if (poolUSDC >= req.amount) {
                     users[req.user].deposit -= req.amount;
