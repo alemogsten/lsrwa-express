@@ -71,7 +71,7 @@ export default function HistoryCard({ isWithdraw, id, timestamp, amount, process
           <div className={clsx('rounded-[100px] px-[12px] py-[2px]', !processed ? 'bg-[#E0710333] text-[#E07103]' : 'bg-[#E6F7EB] text-[#239942]' )}>
             <p className="flex gap-1 text-base leading-[14px] font-medium">
               {!processed && <Image src="/assets/clock.svg" alt="Plus Icon" width={12} height={12} />}
-              {!processed && 'Pending'} {processed && executed && 'Completed'}</p>
+              {!processed ? 'Pending' : 'Completed'}</p>
           </div>
         </div>
       </div>
@@ -90,7 +90,7 @@ export default function HistoryCard({ isWithdraw, id, timestamp, amount, process
         </button>
       }
       {
-        isWithdraw && processed && <button className="mt-6 flex flex-col items-center space-y-2 hover:opacity-80 transition disabled:opacity-50"
+        isWithdraw && processed && !executed && <button className="mt-6 flex flex-col items-center space-y-2 hover:opacity-80 transition disabled:opacity-50 bg-green-300 text-white py-1 px-2 rounded-full"
         disabled={receiving}
         onClick={executeWithdraw}>{receiving ? 'Receiving' : 'Receive'}</button>
       }

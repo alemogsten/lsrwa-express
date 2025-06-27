@@ -17,7 +17,7 @@ export default function PendingWithdrawalCard() {
         const data = json.data;
         var amount = 0;
         data.forEach(element => {
-          amount += element.amount;
+          amount += parseInt(element.amount);
         });
         setWithdrawAmount(amount);
     };
@@ -28,7 +28,7 @@ export default function PendingWithdrawalCard() {
 
   return (
     <div className="p-4 shadow bg-white rounded-xl">
-      <p className="text-base font-medium">Withdrawal Amount</p>
+      <p className="text-base font-medium">Pending Withdrawal Amount</p>
       <p className='text-lg font-bold'>{withdrawAmount}</p>
     </div>
   );

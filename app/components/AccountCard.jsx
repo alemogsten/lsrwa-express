@@ -5,7 +5,10 @@ import ToggleSwitchButton from "./ToggleSwitchButton";
 
 export default function AccountCard() {
 
-  const { deposited, reward, isLoading } = useDepositorAccount();
+  const { 
+    deposited, 
+    reward, 
+    isLoading } = useDepositorAccount();
 
 
   const handleAutoCompoundClick = () => {
@@ -28,7 +31,7 @@ export default function AccountCard() {
         </div>
         <div className='text-center'>
           <p className='text-base font-medium leading-[22px]'>Available Yield</p>
-          <p className='text-[24px] font-bold leading-[30px]'>$ {isLoading ? 0 : deposited + reward}</p>
+          <p className='text-[24px] font-bold leading-[30px]'>$ {isLoading ? 0 : parseFloat(deposited) + parseFloat(reward)}</p>
           <p className='text-[14px] text-gray font-medium leading-[22px]'>Total earnings To date</p>
         </div>
       </div>

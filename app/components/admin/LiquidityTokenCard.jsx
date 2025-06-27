@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useReadContract } from 'wagmi';
+import { formatUnits } from "ethers";
 import vaultAbi from '@/abis/Vault.json';
 
 const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
@@ -33,14 +34,17 @@ export default function LiquidityTokenCard() {
       functionName: 'maxEpochsBeforeLiquidation',
     });
 
+    console.log('repaymentRequiredEpochId', repaymentRequiredEpochId);
+    
+
   return (
     <div className="p-4 shadow bg-white rounded-xl flex justify-between">
       <div>
         <p className="text-base font-medium">Pool LSRWA</p>
-        <p className='text-lg font-bold'>{poolLSRWA ? `${poolLSRWA.toString()}%` : '0.0'}</p>
+        <p className='text-lg font-bold'>{poolLSRWA ? formatUnits(poolLSRWA, 18) : '0.0'}</p>
       </div>
       <div>
-      {parseInt(currentEpochId) > (parseInt(repaymentRequiredEpochId) + parseInt(maxEpochsBeforeLiquidation)) && <button className='px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50'>Liquidate Collateral</button> }
+      {parseInt(repaymentRequiredEpochId) != 0 && parseInt(currentEpochId) > (parseInt(repaymentRequiredEpochId) + parseInt(maxEpochsBeforeLiquidation)) && <button className='px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50'>Liquidate Collateral</button> }
       </div>
     </div>
   );

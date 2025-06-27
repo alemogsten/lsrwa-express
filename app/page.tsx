@@ -8,7 +8,6 @@ import EpochInfoCard from "./components/EpochInfoCard";
 import Image from 'next/image';
 
 import { useWallet } from '@/hooks/useWallet';
-import { timeStamp } from "console";
 import clsx from "clsx";
 
 export default function Home() {

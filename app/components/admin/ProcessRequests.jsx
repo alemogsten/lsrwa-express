@@ -17,6 +17,7 @@ export default function ProcessRequests() {
         try {
             const res = await axios.post('/api/admin/process-requests');
             alert(res.data.success ? "Requests processed!" : "Failed!");
+            fetchRequests();
         } catch (err) {
             console.error("Failed to process requests:", err);
             alert("Error processing requests");
@@ -25,21 +26,21 @@ export default function ProcessRequests() {
         }
     };
 
+    const fetchRequests = async () => {
+        const params = new URLSearchParams({
+            page,
+            limit,
+            ...(status && { status }),
+            ...(type && { type }),
+        });
+
+        const res = await fetch(`/api/admin/requests?${params}`);
+        const json = await res.json();
+        setRequests(json.data);
+        setTotal(json.total);
+    };
+    
     useEffect(() => {
-        const fetchRequests = async () => {
-            const params = new URLSearchParams({
-                page,
-                limit,
-                ...(status && { status }),
-                ...(type && { type }),
-            });
-
-            const res = await fetch(`/api/admin/requests?${params}`);
-            const json = await res.json();
-            setRequests(json.data);
-            setTotal(json.total);
-        };
-
         fetchRequests();
     }, [status, type, page]);
 
@@ -52,6 +53,7 @@ export default function ProcessRequests() {
                     <option value="">All Status</option>
                     <option value="pending">Pending</option>
                     <option value="approved">Approved</option>
+                    <option value="completed">Completed</option>
                     <option value="executed">Executed</option>
                 </select>
                 <select value={type} onChange={(e) => setType(e.target.value)} className="p-2 border rounded">
@@ -91,10 +93,11 @@ export default function ProcessRequests() {
                                 <td className="px-4 py-2">${req.amount}</td>
                                 <td className="px-4 py-2">{new Date(req.timestamp * 1000).toLocaleString()}</td>
                                 <td className="px-4 py-2">
-                                    {req.executed ? 'Executed' : req.processed ? 'Approved' : 'Pending'}
+                                    {req.executed ? 'Executed' : req.processed ? 'Completed' : req.approved ? 'Approved' : 'Pending'}
                                 </td>
                             </tr>
                         ))}
+                        {requests.length == 0 && <tr className="border-t hover:bg-gray-50"><td className="px-4 py-2 text-center">No requests</td></tr>}
                     </tbody>
                 </table>
             </div>
