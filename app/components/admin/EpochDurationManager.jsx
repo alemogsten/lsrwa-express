@@ -1,9 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { useContractRead, useContractWrite } from 'wagmi';
+import { useReadContract } from 'wagmi';
 import { format, formatDuration, intervalToDuration } from 'date-fns';
 import vaultAbi from '@/abis/Vault.json';
+import axios from 'axios';
 
 const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
 const AVERAGE_BLOCK_TIME_MS = process.env.NEXT_PUBLIC_BLOCK_TIME * 1000;
@@ -13,33 +14,23 @@ export default function EpochDurationManager() {
   const [isPending, setIsPending] = useState(false);
 
   // Read current epoch duration
-  const { data: epochDuration, isLoading: isReading } = useContractRead({
+  const { data: epochDuration, refetch, isLoading: isReading } = useReadContract({
     address: VAULT_ADDRESS,
     abi: vaultAbi,
     functionName: 'epochDuration',
     watch: true,
   });
 
-  // Set new epoch duration
-  const { writeAsync } = useContractWrite({
-    address: VAULT_ADDRESS,
-    abi: vaultAbi,
-    functionName: 'setEpochDuration',
-  });
-
   const handleSetDuration = async () => {
     if (!newDuration) return;
-    try {
-      setIsPending(true);
-      await writeAsync({
-        args: [BigInt(newDuration / AVERAGE_BLOCK_TIME_MS)],
-      });
-      setNewDuration('');
-    } catch (err) {
-      console.error('Error setting epoch duration:', err);
-    } finally {
-      setIsPending(false);
-    }
+    setIsPending(true);
+    axios
+            .post('/api/admin/set_epoch_duration', { value: parseInt(newDuration / AVERAGE_BLOCK_TIME_MS) })
+            .then((res) => {
+              console.log(res.data.status);
+              refetch();
+            })
+            .finally(() => setIsPending(false));
   };
 
   const formattedTimeLeft = formatDuration(

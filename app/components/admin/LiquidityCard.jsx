@@ -3,6 +3,7 @@
 import { useReadContract } from 'wagmi';
 import { formatUnits } from "ethers";
 import vaultAbi from '@/abis/Vault.json';
+import { formatNumber } from '@/utils/helper';
 
 const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
 
@@ -19,7 +20,7 @@ export default function LiquidityCard() {
   return (
     <div className="p-4 shadow bg-white rounded-xl">
       <p className="text-base font-medium">Pool USDC</p>
-      <p className='text-lg font-bold'>{!loading ? formatUnits(poolUSDC, parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS || '6')) : '0.0'}</p>
+      <p className='text-lg font-bold'>{!loading ? formatNumber(formatUnits(poolUSDC, parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS || '6'))) : '0.0'}</p>
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useReadContract } from 'wagmi';
 import vaultAbi from '@/abis/Vault.json';
 import { formatUnits } from "ethers";
+import { formatNumber } from '@/utils/helper';
 
 const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
 const decimal = parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS || '6');
@@ -32,7 +33,7 @@ export default function LendingCard() {
     <div className="p-4 shadow bg-white rounded-xl flex justify-between">
       <div>
         <p className="text-base font-medium">Lending USDC</p>
-        <p className='text-lg font-bold'>{borrowingUSDC ? formatUnits(borrowingUSDC, decimal) : '0.0'}</p>
+        <p className='text-lg font-bold'>{borrowingUSDC ? formatNumber(formatUnits(borrowingUSDC, decimal)) : '0.0'}</p>
       </div>
       <div>
       {repaymentRequiredEpochId == 0 || undefined ? 

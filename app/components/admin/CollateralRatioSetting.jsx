@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useReadContract, useWriteContract } from 'wagmi';
+import { useReadContract } from 'wagmi';
+import axios from 'axios';
 
 
 const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
@@ -18,27 +19,16 @@ export default function CollateralRatioSetting() {
     functionName: 'collateralRatio',
   });
 
-  // Write to collateralRatio
-  const { writeContractAsync } = useWriteContract();
-
   const handleSubmit = async () => {
-    if (!input) return;
+    if (!collateralRatio) return;
     setLoading(true);
-    try {
-      await writeContractAsync({
-        address: VAULT_ADDRESS,
-        abi: VAULT_ABI,
-        functionName: 'setCollateralRatio',
-        args: [BigInt(input)],
-      });
-      await refetch();
-      alert('Updated successfully!');
-    } catch (err) {
-      console.error('Update failed:', err);
-      alert('Failed to update');
-    } finally {
-      setLoading(false);
-    }
+    axios
+      .post('/api/admin/set_collateral_ratio', { value: collateralRatio })
+      .then((res) => {
+        console.log(res.data.status);
+        refetch();
+      })
+      .finally(() => setLoading(false));
   };
 
   return (

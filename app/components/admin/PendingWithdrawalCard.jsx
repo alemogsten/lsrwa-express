@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { formatNumber } from '@/utils/helper';
 
 export default function PendingWithdrawalCard() {
   const [withdrawAmount, setWithdrawAmount] = useState(0);
@@ -17,7 +18,7 @@ export default function PendingWithdrawalCard() {
         const data = json.data;
         var amount = 0;
         data.forEach(element => {
-          amount += parseInt(element.amount);
+          amount += parseFloat(element.amount);
         });
         setWithdrawAmount(amount);
     };
@@ -29,7 +30,7 @@ export default function PendingWithdrawalCard() {
   return (
     <div className="p-4 shadow bg-white rounded-xl">
       <p className="text-base font-medium">Pending Withdrawal Amount</p>
-      <p className='text-lg font-bold'>{withdrawAmount}</p>
+      <p className='text-lg font-bold'>{formatNumber(withdrawAmount)}</p>
     </div>
   );
 }

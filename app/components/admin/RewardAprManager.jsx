@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { useReadContract, useWriteContract } from 'wagmi';
+import { useReadContract } from 'wagmi';
 import vaultAbi from '@/abis/Vault.json';
+import axios from 'axios';
 
 const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
 
@@ -17,30 +18,22 @@ export default function RewardAPRManager() {
     functionName: 'rewardAPR',
   });
 
-  const { writeContractAsync } = useWriteContract();
-
   const handleSetRewardAPR = async () => {
-    try {
       setIsPending(true);
-      await writeContractAsync({
-        abi: vaultAbi,
-        address: VAULT_ADDRESS,
-        functionName: 'setRewardAPR',
-        args: [BigInt(newAPR)],
-      });
-      setNewAPR('');
-      refetch(); // refresh rewardAPR after update
-    } catch (err) {
-      console.error('Failed to set rewardAPR:', err);
-    } finally {
-      setIsPending(false);
-    }
+    axios
+            .post('/api/admin/set_rewardapr', { value: newAPR })
+            .then((res) => {
+              console.log(res.data.status);
+              setNewAPR('');
+              refetch(); // refresh rewardAPR after update
+            })
+            .finally(() => setIsPending(false));
   };
 
   return (
     <div className="max-w-md">
       <p className="text-lg font-semibold mb-0">Reward APR</p>
-      <p className='mb-2'>Current Reward APR: {!isReading ? `${rewardAPR.toString()}%` : 'Loading...'}</p>
+      <p className='mb-2'>Current Reward APR: {!isReading ? `${(Number(rewardAPR)*0.01)}%` : 'Loading...'}</p>
 
       <input
         type="number"
