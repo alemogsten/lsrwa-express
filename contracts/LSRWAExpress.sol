@@ -180,7 +180,7 @@ contract LSRWAExpress {
         require(req.processed, "Not approved yet");
         require(!req.executed, "Already executed");
         require(req.amount > 0, "Invalid amount");
-        require(users[msg.sender].deposit >= req.amount, "Insufficient balance");
+        // require(users[msg.sender].deposit >= req.amount, "Insufficient balance");
 
         req.executed = true;
         usdc.safeTransfer(req.user, req.amount);
@@ -193,44 +193,62 @@ contract LSRWAExpress {
     }
 
     function compound() external {
-        _harvest(msg.sender, true);
+        uint256 reward = users[msg.sender].reward;
+        require(reward > 0, "Nothing to compund");
+
+        users[msg.sender].deposit += reward;
+        users[msg.sender].reward = 0;
+
+        // _forceHarvest(msg.sender, true);
     }
 
     function harvestReward() external {
         uint256 reward = users[msg.sender].reward;
         require(reward > 0, "Nothing to harvest");
 
-        users[msg.sender].reward = 0;
-        usdc.safeTransfer(msg.sender, reward);
+        // users[msg.sender].reward = 0;
+        // usdc.safeTransfer(msg.sender, reward);
+
+        _forceHarvest(msg.sender);
 
         emit RewardHarvested(msg.sender, reward);
     }
 
-    function _harvest(address userAddr) internal {
-        _harvest(userAddr, false);
-    }
-
-    function _forceHarvest(address user, bool forceCompound) internal {
-        UserInfo storage user = users[userAddr];
-
-        if (user.deposit == 0 || user.lastHarvestBlock == 0) {
-            user.lastHarvestBlock = block.number;
-            return;
+    function _forceHarvest(address userAddr) internal {
+        // _forceHarvest(userAddr, false);
+        uint256 reward = users[userAddr].reward;
+        // require(reward > 0, "Nothing to harvest");
+        if(reward > 0) {
+            usdc.safeTransfer(userAddr, reward);
+            users[userAddr].reward = 0;
         }
 
-        uint256 blocksPassed = block.number - user.lastHarvestBlock;
-        uint256 reward = user.deposit * rewardAPR * blocksPassed / blocksPerYear / BPS_DIVISOR;
-
-        if (reward > 0) {
-            if (user.autoCompound || forceCompound) {
-                user.deposit += reward;
-            } else {
-                usdc.safeTransfer(msg.sender, reward);
-            }
-        }
-
-        user.lastHarvestBlock = block.number;
+        // emit RewardHarvested(userAddr, reward);
     }
+
+    // function _forceHarvest(address userAddr, bool forceCompound) internal {
+    //     UserInfo storage user = users[userAddr];
+
+    //     if (user.deposit == 0 || user.lastHarvestBlock == 0) {
+    //         user.lastHarvestBlock = block.number;
+    //         return;
+    //     }
+
+    //     uint256 blocksPassed = block.number - user.lastHarvestBlock;
+    //     uint256 reward = user.deposit * rewardAPR * blocksPassed / blocksPerYear / BPS_DIVISOR;
+
+    //     if (reward > 0) {
+    //         if (forceCompound) {
+    //             user.deposit += reward;
+    //         } else {
+    //             usdc.safeTransfer(msg.sender, reward);
+    //         }
+
+    //         poolUSDC -= reward;
+    //     }
+
+    //     user.lastHarvestBlock = block.number;
+    // }
 
     // --- Originator ---
     function depositCollateral(uint256 amount) external {
@@ -280,8 +298,6 @@ contract LSRWAExpress {
         uint256 totalActiveDeposits;
         uint256 totalWithdrawals;
 
-        poolUSDC = usdc.balanceOf(address(this));
-
         // Process approved deposit/withdraw
         for (uint256 i = approvedRequestStart; i < approvedRequestEnd; i++) {
             ApprovedRequest memory req = approvedRequestQueue[i];
@@ -330,7 +346,7 @@ contract LSRWAExpress {
                 }
                 users[req.user].deposit += req.amount;
                 totalActiveDeposits += req.amount;
-                // poolUSDC += req.amount; //no need
+                poolUSDC += req.amount;
                 emit DepositApproved(req.requestId, req.user, req.amount);
             }
 
@@ -342,8 +358,8 @@ contract LSRWAExpress {
             address borrower = borrowerList[i];
             BorrowRequest storage bReq = borrowRequests[borrower];
             if (!bReq.repaid && bReq.epochStart == 0 && poolUSDC >= bReq.amount) {
-                poolUSDC -= bReq.amount;
                 usdc.safeTransfer(borrower, bReq.amount);
+                poolUSDC -= bReq.amount;
                 borrowingUSDC += bReq.amount;
                 bReq.epochStart = currentEpochId;
                 emit BorrowExecuted(borrower, bReq.amount);
@@ -364,8 +380,9 @@ contract LSRWAExpress {
                 if (u.autoCompound) {
                     u.deposit += reward;
                     totalActiveDeposits += reward;
+                    poolUSDC -= reward;
                 } else {
-                    // u.reward += reward;
+                    u.reward += reward;
                 }
                 u.lastHarvestBlock = block.number;
             }
@@ -407,6 +424,10 @@ contract LSRWAExpress {
 
     function setCollateralRatio(uint256 ratio) external onlyAdmin {
         collateralRatio = ratio;
+    }
+
+    function toupUSDC(uint256 amount) external onlyAdmin {
+        poolUSDC += amount;
     }
 
     function repaymentRequired() external onlyAdmin {

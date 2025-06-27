@@ -243,7 +243,7 @@
                 "type": "uint256"
             }
         ],
-        "name": "RewardsClaimed",
+        "name": "RewardHarvested",
         "type": "event"
     },
     {
@@ -330,25 +330,6 @@
     {
         "inputs": [],
         "name": "BPS_DIVISOR",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "name": "activeDeposits",
         "outputs": [
             {
                 "internalType": "uint256",
@@ -458,6 +439,19 @@
     },
     {
         "inputs": [],
+        "name": "blocksPerYear",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "",
+                "type": "uint256"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
         "name": "borrowCounter",
         "outputs": [
             {
@@ -544,13 +538,6 @@
         "type": "function"
     },
     {
-        "inputs": [],
-        "name": "claimRewards",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
         "inputs": [
             {
                 "internalType": "address",
@@ -580,6 +567,13 @@
             }
         ],
         "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "compound",
+        "outputs": [],
+        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
@@ -772,6 +766,13 @@
             }
         ],
         "name": "executeWithdraw",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [],
+        "name": "harvestReward",
         "outputs": [],
         "stateMutability": "nonpayable",
         "type": "function"
@@ -1020,6 +1021,19 @@
     {
         "inputs": [
             {
+                "internalType": "bool",
+                "name": "status",
+                "type": "bool"
+            }
+        ],
+        "name": "setAutoCompound",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "uint256",
                 "name": "ratio",
                 "type": "uint256"
@@ -1072,6 +1086,19 @@
     {
         "inputs": [
             {
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256"
+            }
+        ],
+        "name": "toupUSDC",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "internalType": "address",
                 "name": "",
                 "type": "address"
@@ -1096,6 +1123,40 @@
                 "internalType": "contract IERC20",
                 "name": "",
                 "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "name": "users",
+        "outputs": [
+            {
+                "internalType": "uint256",
+                "name": "deposit",
+                "type": "uint256"
+            },
+            {
+                "internalType": "uint256",
+                "name": "reward",
+                "type": "uint256"
+            },
+            {
+                "internalType": "bool",
+                "name": "autoCompound",
+                "type": "bool"
+            },
+            {
+                "internalType": "uint256",
+                "name": "lastHarvestBlock",
+                "type": "uint256"
             }
         ],
         "stateMutability": "view",
