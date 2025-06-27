@@ -25,6 +25,7 @@ vault.on("DepositRequested", async (requestId, user, amount, timestamp) => {
     timestamp: Number(timestamp),
     isWithdraw: false,
     processed: false,
+    approved: false,
     executed: false
   });
   console.log('Deposit stored:', requestId.toString());
@@ -40,10 +41,11 @@ vault.on("WithdrawRequested", async (requestId, user, amount, timestamp) => {
   await collection.insertOne({
     requestId: Number(requestId),
     user,
-    amount: amount.toString(),
+    amount: formatUnits(amount, parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS || '6')),
     timestamp: Number(timestamp),
     isWithdraw: true,
     processed: false,
+    approved: false,
     executed: false
   });
   console.log('Withdraw stored:', requestId.toString());
@@ -52,7 +54,7 @@ vault.on("WithdrawRequested", async (requestId, user, amount, timestamp) => {
 vault.on("WithdrawExecuted", async(requestId, user, amount) => {
   console.log("WithdrawExecute:", requestId.toString(), user, amount);
   await collection.updateOne(
-    { requestId: Number(requestId), user: user.toLowerCase(), isWithdraw: true },
+    { requestId: Number(requestId) },
     { $set: { executed: true } }
   );
 });
@@ -61,7 +63,7 @@ vault.on("DepositApproved", async(requestId, user, amount) => {
   try {
     console.log("DepositApprove:", requestId.toString(), user, amount);
     await collection.updateOne(
-      { requestId: Number(requestId), user: user.toLowerCase(), isWithdraw: false },
+      { requestId: Number(requestId) },
       { $set: { processed: true } }
     );
     } catch (error) {
@@ -72,8 +74,8 @@ vault.on("DepositApproved", async(requestId, user, amount) => {
 vault.on("WithdrawApproved", async(requestId, user, amount) => {
   console.log("WithdrawApproved:", requestId.toString(), user, amount);
   await collection.updateOne(
-    { requestId: Number(requestId), user: user.toLowerCase(), isWithdraw: true },
-    { $set: { processed: true } }
+    { requestId: Number(requestId) },
+    { $set: { processed: true, amount: formatUnits(amount, parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS || '6')) } }
   );
 });
 

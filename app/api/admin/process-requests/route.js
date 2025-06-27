@@ -8,8 +8,9 @@ export async function POST() {
   try {
     const client = await clientPromise;
     const db = client.db(process.env.MONGO_DB);
-    const query = {};
-    query.processed = false;
+    const collection = db.collection('requests');
+
+    const query = {processed: false};
     const data = await db
       .collection('requests')
       .find(query)
@@ -23,7 +24,7 @@ export async function POST() {
     const approvedRequests = data.map((r) => ({
       user: r.user,
       requestId: r.requestId,
-      amount: BigInt(r.amount * Math.pow(10, process.env.NEXT_PUBLIC_USDC_DECIMALS)),
+      amount: (r.amount * 10 ** process.env.NEXT_PUBLIC_USDC_DECIMALS)+'',
       timestamp: r.timestamp,
       isWithdraw: r.isWithdraw,
     }));
@@ -32,7 +33,14 @@ export async function POST() {
     const tx = await vault.processRequests(approvedRequests);
     await tx.wait();
 
-    return NextResponse.json({ success: true });
+    for (const element of approvedRequests) {
+      await collection.updateOne(
+        { requestId: Number(element.requestId), timestamp: element.timestamp },
+        { $set: { approved: true } }
+      );
+    }
+
+    return NextResponse.json({ success: true, approvedRequests });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: error.message }, { status: 500 });
