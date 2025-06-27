@@ -17,7 +17,6 @@ export default function Home() {
     disconnect,
     balance,
     symbol,
-    isBalanceLoading,
   } = useWallet();
   const histoires = [
     {
@@ -57,7 +56,7 @@ export default function Home() {
     },
   ]
   return (
-    <main className="p-20">
+    <main className="px-[20px] md:px-[66px] xl:px-[120px] py-20">
       
       <div className="flex items-center gap-[10px] p-[8px] pr-[30px] bg-white rounded-[50px] w-max">
         <Image
@@ -82,7 +81,7 @@ export default function Home() {
       </div>}
       <div className={clsx('mt-8 gap-10', isConnected ? 'grid grid-cols-5' : '')}>
         {isConnected &&  
-        <div className="col-span-5 lg:col-span-3">
+        <div className="col-span-5 xl:col-span-3">
           <WalletInfoCard />
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
             <AccountCard />
@@ -90,7 +89,7 @@ export default function Home() {
           </div>
         </div>
         }
-        <div className="col-span-5 lg:col-span-2 lg:h-[565px] overflow-hidden">
+        <div className="col-span-5 xl:col-span-2 lg:h-[565px] overflow-hidden">
         <RequestHistory />
         </div>
       </div>
