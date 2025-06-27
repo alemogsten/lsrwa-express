@@ -317,12 +317,13 @@ contract LSRWAExpress {
                     if (poolUSDC > 0) {
                         // Partial fill
                         uint256 partialAmount = poolUSDC;
-                        users[req.user].deposit -= partialAmount;
+                        users[req.user].deposit -= poolUSDC;
+                        
+                        wReq.processed = true;
+                        wReq.amount = poolUSDC;
+
                         poolUSDC = 0;
                         totalWithdrawals += partialAmount;
-
-                        wReq.processed = true;
-                        wReq.amount = partialAmount;
 
                         uint256 remaining = req.amount - partialAmount;
                         withdrawCounter++;
@@ -381,10 +382,10 @@ contract LSRWAExpress {
                 if (u.autoCompound) {
                     u.deposit += reward;
                     totalActiveDeposits += reward;
-                    poolUSDC -= reward;
                 } else {
                     u.reward += reward;
                 }
+                poolUSDC -= reward;
                 u.lastHarvestBlock = block.number;
             }
         }
