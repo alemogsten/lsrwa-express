@@ -33,7 +33,7 @@ vault.on("DepositRequested", async (requestId, user, amount, timestamp) => {
 
 vault.on("DepositCancelled", async (requestId, user) => {
   console.log("DepositCancelled:", requestId.toString(), user);
-  await collection.deleteOne({ requestId: Number(requestId) });
+  await collection.deleteOne({ requestId: Number(requestId),isWithdraw: false });
 });
 
 vault.on("WithdrawRequested", async (requestId, user, amount, timestamp) => {
@@ -54,7 +54,7 @@ vault.on("WithdrawRequested", async (requestId, user, amount, timestamp) => {
 vault.on("WithdrawExecuted", async(requestId, user, amount) => {
   console.log("WithdrawExecute:", requestId.toString(), user, amount);
   await collection.updateOne(
-    { requestId: Number(requestId) },
+    { requestId: Number(requestId),isWithdraw: true },
     { $set: { executed: true } }
   );
 });
@@ -63,7 +63,7 @@ vault.on("DepositApproved", async(requestId, user, amount) => {
   try {
     console.log("DepositApprove:", requestId.toString(), user, amount);
     await collection.updateOne(
-      { requestId: Number(requestId) },
+      { requestId: Number(requestId),isWithdraw: false },
       { $set: { processed: true } }
     );
     } catch (error) {
@@ -74,7 +74,7 @@ vault.on("DepositApproved", async(requestId, user, amount) => {
 vault.on("WithdrawApproved", async(requestId, user, amount) => {
   console.log("WithdrawApproved:", requestId.toString(), user, amount);
   await collection.updateOne(
-    { requestId: Number(requestId) },
+    { requestId: Number(requestId),isWithdraw: true },
     { $set: { processed: true, amount: formatUnits(amount, parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS || '6')) } }
   );
 });

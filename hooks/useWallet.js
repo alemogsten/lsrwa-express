@@ -3,6 +3,7 @@
 
 import { useAccount, useBalance, useDisconnect } from 'wagmi';
 import { formatUnits } from 'ethers';
+import {formatNumber} from '@/utils/helper';
 
 import dotenv from "dotenv";
 dotenv.config();
@@ -49,9 +50,9 @@ export function useWallet() {
     status,
     connector,
     disconnect,
-    balance: usdcBalance?.value ? formatUnits(usdcBalance.value, decimals) : '0.0',
+    balance: usdcBalance?.value ? formatNumber(formatUnits(usdcBalance.value, decimals)) : '0.0',
     symbol: usdcBalance?.symbol ?? '',
-    tokenBalance: !isTokenBalanceLoading ? formatUnits(tokenBalance.value, 18) : '0.0',
+    tokenBalance: !isTokenBalanceLoading ? formatNumber(formatUnits(tokenBalance.value, 18)) : '0.0',
     // symbol: balanceData?.symbol ?? '',
     isTokenBalanceLoading,
     isUSDCBalanceLoading,

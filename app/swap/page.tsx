@@ -22,7 +22,6 @@ export default function Swap() {
     disconnect,
     balance,
     symbol,
-    isBalanceLoading,
   } = useWallet();
   
   return (

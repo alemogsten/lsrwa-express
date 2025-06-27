@@ -8,6 +8,7 @@ import { ethers } from "ethers";
 
 import { connectWallet } from "@/utils/wallet";
 import vaultAbi from "@/abis/Vault.json";
+import { formatNumber } from "@/utils/helper";
 
 
 export default function HistoryCard({ isWithdraw, id, timestamp, amount, processed, fetchRequests, executed }) {
@@ -67,7 +68,7 @@ export default function HistoryCard({ isWithdraw, id, timestamp, amount, process
           </div>
         </div>
         <div className="flex flex-col">
-          <p className="mt-2 text-right text-[18px] font-bold leading-[22px] text-black">${amount}</p>
+          <p className="mt-2 text-right text-[18px] font-bold leading-[22px] text-black">${formatNumber(amount)}</p>
           <div className={clsx('rounded-[100px] px-[12px] py-[2px]', !processed ? 'bg-[#E0710333] text-[#E07103]' : 'bg-[#E6F7EB] text-[#239942]' )}>
             <p className="flex gap-1 text-base leading-[14px] font-medium">
               {!processed && <Image src="/assets/clock.svg" alt="Plus Icon" width={12} height={12} />}

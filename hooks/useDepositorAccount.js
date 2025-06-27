@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useAccount, useReadContracts, useWriteContract } from 'wagmi';
 import vaultAbi from '@/abis/Vault.json';
 import { formatUnits } from 'ethers';
+import {formatNumber} from '@/utils/helper'
 
 const decimals = parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS || '6');
 const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
@@ -12,8 +13,9 @@ export function useDepositorAccount() {
   const [compounding, setCompounding] = useState(false);
   const [harvesting, setHarvesting] = useState(false);
   const { address } = useAccount();
+  const { writeContractAsync } = useWriteContract();
 
-  const { data, isLoading, error } = useReadContracts({
+  const { data, isLoading, refetch, error } = useReadContracts({
     contracts: [
       {
         address: VAULT_ADDRESS,
@@ -34,7 +36,7 @@ export function useDepositorAccount() {
   });
 
   const setAutoCompound = async (status) => {
-    const { writeContractAsync } = useWriteContract();
+    
     try {
       await writeContractAsync({
         address: VAULT_ADDRESS,
@@ -48,7 +50,6 @@ export function useDepositorAccount() {
     }
   }
   const compound = async () => {
-    const { writeContractAsync } = useWriteContract();
     setCompounding(true);
     try {
       await writeContractAsync({
@@ -56,6 +57,7 @@ export function useDepositorAccount() {
         abi: vaultAbi,
         functionName: 'compound',
       });
+      refetch();
     } catch (err) {
       console.error('Update failed:', err);
     } finally {
@@ -63,7 +65,6 @@ export function useDepositorAccount() {
     }
   }
   const harvestReward = async () => {
-    const { writeContractAsync } = useWriteContract();
     setHarvesting(true);
     try {
       await writeContractAsync({
@@ -71,6 +72,7 @@ export function useDepositorAccount() {
         abi: vaultAbi,
         functionName: 'harvestReward',
       });
+      await refetch();
     } catch (err) {
       console.error('Update failed:', err);
     } finally {
@@ -78,10 +80,10 @@ export function useDepositorAccount() {
     }
   }
 
-  const deposited = formatUnits(data?.[0]?.deposit ?? 0n, decimals) ;
-  const reward = formatUnits(data?.[0]?.reward ?? 0n, decimals) ;
-  const autoCompound = data?.[0]?.autoCompound ?? false ;
-  const rewardAPR = Number(data?.[1] ?? 0n) ;
+  const deposited = formatNumber(formatUnits(data?.[0][0] ?? 0n, decimals)) ;
+  const reward = formatNumber(formatUnits(data?.[0][1] ?? 0n, decimals)) ;
+  const autoCompound = data?.[0][2] ?? false ;
+  const rewardAPR = Number(data?.[1] ?? 0n) * 0.01 ;
 
   return {
     deposited,
