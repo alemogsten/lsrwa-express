@@ -356,7 +356,7 @@ contract LSRWAExpress {
         }
 
         // Borrowing
-        for (uint256 i = 1; i <= borrowerList.length; i++) {
+        for (uint256 i = 0; i <= borrowerList.length; i++) {
             address borrower = borrowerList[i];
             BorrowRequest storage bReq = borrowRequests[borrower];
             if (!bReq.repaid && bReq.epochStart == 0 && poolUSDC >= bReq.amount) {
