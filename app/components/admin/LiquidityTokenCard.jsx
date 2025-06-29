@@ -7,7 +7,7 @@ import { useAdminSummary } from '@/hooks/useAdminSummary';
 
 export default function LiquidityTokenCard() {
 
-  const {poolLSRWA, repaymentRequiredEpochId, currentEpochId, maxEpochsBeforeLiquidation, refetch} = useAdminSummary();
+  const {borrowingUSDC, poolLSRWA, repaymentRequiredEpochId, currentEpochId, maxEpochsBeforeLiquidation, refetch} = useAdminSummary();
 
   const [loading, setLoading] = useState(false);
   const [address, setAddress] = useState('');
@@ -34,7 +34,7 @@ export default function LiquidityTokenCard() {
         <p className='text-lg font-bold'>{poolLSRWA ? formatNumber(poolLSRWA) : '0.0'}</p>
       </div>
       <div className='flex flex-col'>
-        {parseInt(repaymentRequiredEpochId) != 0 && parseInt(currentEpochId) >= (parseInt(repaymentRequiredEpochId) + parseInt(maxEpochsBeforeLiquidation)) 
+        {borrowingUSDC > 0 && parseInt(repaymentRequiredEpochId) != 0 && parseInt(currentEpochId) >= (parseInt(repaymentRequiredEpochId) + parseInt(maxEpochsBeforeLiquidation)) 
         && <>
           <input value={address} onChange={(e) => setAddress(e.target.value)} type="text" placeholder="Enter address" className='px-2 py-1 border border-gray-300 rounded-sm' />
           <button disabled={loading} onClick={handleLiquidate} className='mt-1 px-4 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50'>{loading ? 'Loading' : 'Liquidate Collateral'}</button>

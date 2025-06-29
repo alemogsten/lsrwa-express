@@ -10,6 +10,7 @@ import LiquidityCard from '../components/admin/LiquidityCard';
 import PendingWithdrawalCard from '../components/admin/PendingWithdrawalCard';
 import LendingCard from '../components/admin/LendingCard';
 import LiquidityTokenCard from '../components/admin/LiquidityTokenCard';
+import TopupUSDC from '../components/admin/TopupUSDC';
 
 export default function AdminDashboard() {
 
@@ -27,6 +28,7 @@ export default function AdminDashboard() {
                 <MaxEpochSetting />
                 <CollateralRatioSetting />
                 <EpochDurationManager />
+                <TopupUSDC />
             </div>
             <div className='mt-10'>
                 <ProcessEpoch />
