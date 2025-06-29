@@ -1,7 +1,6 @@
 'use client';
 
-import {useState} from 'react';
-import { useAccount, useReadContracts, useWriteContract } from 'wagmi';
+import { useReadContracts } from 'wagmi';
 import { formatUnits } from "ethers";
 import vaultAbi from '@/abis/Vault.json';
 
@@ -9,9 +8,6 @@ const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
 const USDC_DECIMAL = parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS || '6');
 
 export function useAdminSummary() {
-  const [repaying, setRepayLoading] = useState(false);
-  const [repayStatus, setRepayStatus] = useState('');
-  const { address } = useAccount();
 
   const { data, isLoading, refetch, error } = useReadContracts({
     contracts: [
@@ -54,25 +50,6 @@ export function useAdminSummary() {
     allowFailure: false,
   });
 
-  const { writeContractAsync } = useWriteContract();
-  const writeRepay = async () => {
-    setRepayLoading(true);
-    try {
-      await writeContractAsync({
-        address: VAULT_ADDRESS,
-        abi: vaultAbi,
-        functionName: 'repayBorrow',
-      });
-      setRepayStatus('Repaied successfully.');
-    } catch (err) {
-      console.error('Update failed:', err);
-      setRepayStatus('Repaied failed.' + err);
-    } finally {
-      setRepayLoading(false);
-    }
-  }
-
-
   const poolUSDC = formatUnits(data?.[0] ?? 0n, USDC_DECIMAL);
   const borrowingUSDC = formatUnits(data?.[1] ?? 0n, USDC_DECIMAL);
   const poolLSRWA = formatUnits(data?.[2] ?? 0n, 18);
@@ -90,9 +67,6 @@ export function useAdminSummary() {
     maxEpochsBeforeLiquidation,
     currentEpochId,
     refetch,
-    writeRepay,
-    repaying,
-    repayStatus,
     isLoading,
     error,
   };
