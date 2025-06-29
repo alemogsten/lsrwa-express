@@ -261,7 +261,7 @@ contract LSRWAExpress {
 
     function requestBorrow(uint256 amount) external {
         BorrowRequest storage pos = borrowRequests[msg.sender];
-        require(!repaid, "Already borrowed");
+        require(!pos.repaid, "Already borrowed");
         require(collateralDeposits[msg.sender] * 100 / amount >= collateralRatio, 'Insufficient collateral value');
 
         pos.amount = amount;
