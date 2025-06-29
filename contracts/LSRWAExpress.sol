@@ -283,6 +283,7 @@ contract LSRWAExpress {
 
         usdc.safeTransferFrom(msg.sender, address(this), pos.amount);
         borrowingUSDC -= pos.amount;
+        poolUSDC += pos.amount;
         pos.repaid = true;
     }
 
