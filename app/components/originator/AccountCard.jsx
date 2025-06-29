@@ -1,8 +1,17 @@
 'use client';
 
+import {useState} from 'react';
+import { ethers } from "ethers";
+import { connectWallet } from "@/utils/wallet";
+import { useWallet } from "@/hooks/useWallet";
 import { useOriginatorAccount } from '@/hooks/useOriginatorAccount';
+import erc20Abi from "@/abis/ERC20.json";
+import vaultAbi from "@/abis/Vault.json";
 
 export default function AccountCard() {
+
+  const [repaying, setRepayLoading] = useState(false);
+  const {isConnected} = useWallet();
 
   const { 
     deposited, 
@@ -11,16 +20,41 @@ export default function AccountCard() {
     maxEpochsBeforeLiquidation,
     currentEpochId,
     repaid, 
-    writeRepay,
-    repaying,
-    repayStatus,
+    refetch,
     isLoading
    } = useOriginatorAccount();
 
 
   const handleRepay = async () => {
-    await writeRepay();
-    alert(repayStatus);
+    // await writeRepay();
+    // alert(repayStatus);
+    try {
+          const { signer } = await connectWallet();
+          if (!isConnected) return alert("Wallet not connected");
+
+          setRepayLoading(true);
+
+          const usdc = new ethers.Contract(process.env.NEXT_PUBLIC_USDC_ADDRESS, erc20Abi, signer);
+          const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
+    
+          const owner = await signer.getAddress();
+          const allowance = await usdc.allowance(owner, process.env.NEXT_PUBLIC_VAULT_ADDRESS);
+          const parsedAmount = ethers.parseUnits(borrowed, parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS));
+          if (allowance < parsedAmount) {
+            const approveTx = await usdc.approve(process.env.NEXT_PUBLIC_VAULT_ADDRESS, parsedAmount);
+            await approveTx.wait();
+          }
+    
+          const repayTx = await vault.repayBorrow();
+          await repayTx.wait();
+          alert('Repaid successfully');
+          refetch();
+        } catch (error) {
+          console.error(error);
+          alert("Error: " + (error?.reason || error?.message));
+        } finally {
+          setRepayLoading(false);
+        }
   };
 
   return (

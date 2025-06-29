@@ -1,18 +1,15 @@
 'use client';
 
-import {useState} from 'react';
-import { useAccount, useReadContracts, useWriteContract } from 'wagmi';
+import { useAccount, useReadContracts } from 'wagmi';
 import { formatUnits } from "ethers";
 import vaultAbi from '@/abis/Vault.json';
 
 const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
 
 export function useOriginatorAccount() {
-  const [repaying, setRepayLoading] = useState(false);
-  const [repayStatus, setRepayStatus] = useState('');
   const { address } = useAccount();
 
-  const { data, isLoading, error } = useReadContracts({
+  const { data, isLoading, refetch, error } = useReadContracts({
     contracts: [
       {
         address: VAULT_ADDRESS,
@@ -53,25 +50,6 @@ export function useOriginatorAccount() {
     },
   });
 
-  const { writeContractAsync } = useWriteContract();
-  const writeRepay = async () => {
-    setRepayLoading(true);
-    try {
-      await writeContractAsync({
-        address: VAULT_ADDRESS,
-        abi: vaultAbi,
-        functionName: 'repayBorrow',
-      });
-      setRepayStatus('Repaied successfully.');
-    } catch (err) {
-      console.error('Update failed:', err);
-      setRepayStatus('Repaied failed.' + err);
-    } finally {
-      setRepayLoading(false);
-    }
-  }
-
-
   const deposited = formatUnits(data?.[0] ?? 0n, 18);
   const borrowRequest = data?.[1] ?? null;
   const borrowed = borrowRequest!= null && Number(borrowRequest[1]) != 0 && borrowRequest[2] == false ? formatUnits(borrowRequest[0], 18) : 0;
@@ -89,9 +67,7 @@ export function useOriginatorAccount() {
     maxEpochsBeforeLiquidation,
     currentEpochId,
     repaid,
-    writeRepay,
-    repaying,
-    repayStatus,
+    refetch,
     isLoading,
     error,
   };
