@@ -26,8 +26,6 @@ export default function AccountCard() {
 
 
   const handleRepay = async () => {
-    // await writeRepay();
-    // alert(repayStatus);
     try {
           const { signer } = await connectWallet();
           if (!isConnected) return alert("Wallet not connected");
