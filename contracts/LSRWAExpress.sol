@@ -261,7 +261,7 @@ contract LSRWAExpress {
 
     function requestBorrow(uint256 amount) external {
         BorrowRequest storage pos = borrowRequests[msg.sender];
-        require(pos.amount == 0, "Already borrowed");
+        require(!repaid, "Already borrowed");
         require(collateralDeposits[msg.sender] * 100 / amount >= collateralRatio, 'Insufficient collateral value');
 
         pos.amount = amount;
@@ -278,7 +278,9 @@ contract LSRWAExpress {
 
     function repayBorrow() external {
         BorrowRequest storage pos = borrowRequests[msg.sender];
-        require(pos.amount > 0 && !pos.repaid, "Nothing to repay");
+        require(pos.amount > 0, "Nothing to repay");
+        require(!pos.repaid, "Repaid already");
+
         usdc.safeTransferFrom(msg.sender, address(this), pos.amount);
         borrowingUSDC -= pos.amount;
         pos.repaid = true;
@@ -441,7 +443,7 @@ contract LSRWAExpress {
         for (uint256 i = 0; i < borrowerList.length; i++) {
             address borrower = borrowerList[i];
             BorrowRequest storage pos = borrowRequests[borrower];
-            require(!pos.repaid, "Not eligible");
+            if(pos.repaid) continue;
 
             uint256 seized = collateralDeposits[borrower];
             pos.repaid = true;
