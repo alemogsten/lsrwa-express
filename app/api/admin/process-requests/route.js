@@ -10,7 +10,7 @@ export async function POST() {
     const db = client.db(process.env.MONGO_DB);
     const collection = db.collection('requests');
 
-    const query = {processed: false};
+    const query = {processed: false, approved: false};
     const data = await db
       .collection('requests')
       .find(query)
@@ -29,18 +29,21 @@ export async function POST() {
       isWithdraw: r.isWithdraw,
     }));
 
-
-    const tx = await vault.processRequests(approvedRequests);
-    await tx.wait();
-
-    for (const element of approvedRequests) {
-      await collection.updateOne(
-        { requestId: Number(element.requestId), timestamp: element.timestamp },
-        { $set: { approved: true } }
-      );
+    if(approvedRequests.length > 0) {
+      const tx = await vault.processRequests(approvedRequests);
+      await tx.wait();
+  
+      for (const element of approvedRequests) {
+        await collection.updateOne(
+          { requestId: Number(element.requestId), timestamp: element.timestamp },
+          { $set: { approved: true } }
+        );
+      }
+  
+      return NextResponse.json({ success: true, approvedRequests });
+    } else {
+      return NextResponse.json({ success: false, error: "No pending requests" });
     }
-
-    return NextResponse.json({ success: true, approvedRequests });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: error.message }, { status: 500 });

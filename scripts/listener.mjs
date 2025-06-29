@@ -94,8 +94,8 @@ vault.on("CollateralDeposited", (user, amount) => {
   // Optionally write to local DB, file, or call internal API
 });
 
-vault.on("CollateralLiquidated", (user, amount) => {
-  console.log("CollateralLiquidat:", user, amount);
+vault.on("CollateralLiquidated", (amount) => {
+  console.log("CollateralLiquidat:", amount);
   // Optionally write to local DB, file, or call internal API
 });
 

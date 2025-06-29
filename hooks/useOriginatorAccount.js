@@ -53,8 +53,8 @@ export function useOriginatorAccount() {
     },
   });
 
+  const { writeContractAsync } = useWriteContract();
   const writeRepay = async () => {
-    const { writeContractAsync } = useWriteContract();
     setRepayLoading(true);
     try {
       await writeContractAsync({

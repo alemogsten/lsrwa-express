@@ -16,7 +16,7 @@ export default function ProcessRequests() {
         setProcessingRequests(true);
         try {
             const res = await axios.post('/api/admin/process-requests');
-            alert(res.data.success ? "Requests processed!" : "Failed!");
+            alert(res.data.success ? "Requests processed!" : res.data.error);
             fetchRequests();
         } catch (err) {
             console.error("Failed to process requests:", err);
