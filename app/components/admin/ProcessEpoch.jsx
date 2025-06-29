@@ -2,11 +2,11 @@
 
 import { useState } from 'react';
 import axios from 'axios';
-
+import { useAdminSummary } from '@/hooks/useAdminSummary';
 import EpochProgressBar from '../EpochProgressBar';
 
 export default function ProcessEpoch() {
-
+    const {refetch} = useAdminSummary();
     const [processingEpoch, setProcessingEpoch] = useState(false);
     const [refresh, setRefresh] = useState(false);
     const handleProcessEpoch = async () => {
@@ -15,6 +15,7 @@ export default function ProcessEpoch() {
             const res = await axios.post('/api/admin/process-epoch');
             alert(res.data.success ? "Epoch processed!" : "Failed!");
             setRefresh(true);
+            refetch();
         } catch (err) {
             console.error("Failed to process epoch:", err);
             alert("Error processing epoch");

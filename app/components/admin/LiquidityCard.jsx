@@ -1,26 +1,16 @@
 'use client';
 
-import { useReadContract } from 'wagmi';
-import { formatUnits } from "ethers";
-import vaultAbi from '@/abis/Vault.json';
 import { formatNumber } from '@/utils/helper';
-
-const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
+import { useAdminSummary } from '@/hooks/useAdminSummary';
 
 export default function LiquidityCard() {
 
-  // Read poolUSDC
-  const { data: poolUSDC, isLoading: loading } = useReadContract({
-    abi: vaultAbi,
-    address: VAULT_ADDRESS,
-    functionName: 'poolUSDC',
-  });
-
+  const {poolUSDC, isLoading} = useAdminSummary();
 
   return (
     <div className="p-4 shadow bg-white rounded-xl">
       <p className="text-base font-medium">Pool USDC</p>
-      <p className='text-lg font-bold'>{!loading ? formatNumber(formatUnits(poolUSDC, parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS || '6'))) : '0.0'}</p>
+      <p className='text-lg font-bold'>{!isLoading ? formatNumber(poolUSDC) : '0.0'}</p>
     </div>
   );
 }

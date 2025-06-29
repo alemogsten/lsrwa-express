@@ -1,49 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { useReadContracts } from 'wagmi';
-import { formatUnits } from "ethers";
-import vaultAbi from '@/abis/Vault.json';
 import { formatNumber } from '@/utils/helper';
 import axios from 'axios';
-
-const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
+import { useAdminSummary } from '@/hooks/useAdminSummary';
 
 export default function LiquidityTokenCard() {
 
-  const { data, isLoading, refetch, error } = useReadContracts({
-    contracts: [
-      {
-        abi: vaultAbi,
-        address: VAULT_ADDRESS,
-        functionName: 'poolLSRWA',
-      },
-      {
-        abi: vaultAbi,
-        address: VAULT_ADDRESS,
-        functionName: 'repaymentRequiredEpochId',
-      },
-      {
-        abi: vaultAbi,
-        address: VAULT_ADDRESS,
-        functionName: 'currentEpochId',
-      },
-      {
-        abi: vaultAbi,
-        address: VAULT_ADDRESS,
-        functionName: 'maxEpochsBeforeLiquidation',
-      },
-    ],
-    allowFailure: false,
-  });
+  const {poolLSRWA, repaymentRequiredEpochId, currentEpochId, maxEpochsBeforeLiquidation, refetch} = useAdminSummary();
 
-  
-  
-  const poolLSRWA = data?.[0] ?? 0n;
-  const repaymentRequiredEpochId = data?.[1] ?? 0n;
-  const currentEpochId = data?.[2] ?? 0n;
-  const maxEpochsBeforeLiquidation = data?.[3] ?? 0n;
-  
   const [loading, setLoading] = useState(false);
   const [address, setAddress] = useState('');
 
@@ -66,7 +31,7 @@ export default function LiquidityTokenCard() {
     <div className="p-4 shadow bg-white rounded-xl flex justify-between">
       <div>
         <p className="text-base font-medium">Pool LSRWA</p>
-        <p className='text-lg font-bold'>{poolLSRWA ? formatNumber(formatUnits(poolLSRWA, 18)) : '0.0'}</p>
+        <p className='text-lg font-bold'>{poolLSRWA ? formatNumber(poolLSRWA) : '0.0'}</p>
       </div>
       <div className='flex flex-col'>
         {parseInt(repaymentRequiredEpochId) != 0 && parseInt(currentEpochId) >= (parseInt(repaymentRequiredEpochId) + parseInt(maxEpochsBeforeLiquidation)) 
