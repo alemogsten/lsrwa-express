@@ -1,6 +1,6 @@
 // app/api/admin/process-requests/route.js
 import { NextResponse } from "next/server";
-import { ethers } from "ethers";
+import { ethers, parseUnits } from "ethers";
 import vaultAbi from "@/abis/Vault.json";
 import clientPromise from '@/lib/mongo';
 
@@ -24,7 +24,7 @@ export async function POST() {
     const approvedRequests = data.map((r) => ({
       user: r.user,
       requestId: r.requestId,
-      amount: (r.amount * 10 ** process.env.NEXT_PUBLIC_USDC_DECIMALS)+'',
+      amount: parseUnits(r.amount.toString(), parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS)),
       timestamp: r.timestamp,
       isWithdraw: r.isWithdraw,
     }));
@@ -40,7 +40,7 @@ export async function POST() {
         );
       }
   
-      return NextResponse.json({ success: true, approvedRequests });
+      return NextResponse.json({ success: true });
     } else {
       return NextResponse.json({ success: false, error: "No pending requests" });
     }
