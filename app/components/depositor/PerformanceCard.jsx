@@ -1,13 +1,9 @@
 'use client';
 
-import { useDepositorAccount } from '@/hooks/useDepositorAccount';
-import { useWallet } from '@/hooks/useWallet';
-import Progressbar from "./Progressbar";
+import Progressbar from "../Progressbar";
 
-export default function AccountCard() {
+export default function PerformanceCard({rewardAPR}) {
   
-  const { rewardAPR, isLoading } = useDepositorAccount();
-
   return (
     <div className="flex flex-col justify-between w-full h-[175px] border border-green bg-white rounded-[11px] shadow-[1px_3px_4px_0px_rgba(0,0,0,0.15)] p-[14px]">
       <p className='text-base font-medium leading-[22px]'>Performance Metricss</p>
@@ -18,7 +14,7 @@ export default function AccountCard() {
         </div>
         <div className='flex flex-col items-center justify-center w-full h-full rounded-[6px] bg-[#F6F8F9]'>
           <p className='text-center font-medium leading-[30px] color-[#0A133999]'>Current APR</p>
-          <p className='text-center font-bold text-[24px] leading-[30px]'>{isLoading ? '0' : rewardAPR}%</p>
+          <p className='text-center font-bold text-[24px] leading-[30px]'>{rewardAPR}%</p>
         </div>
       </div>
       <div className='w-full'>

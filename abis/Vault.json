@@ -40,9 +40,28 @@
                 "internalType": "uint256",
                 "name": "seizedAmount",
                 "type": "uint256"
+            },
+            {
+                "indexed": false,
+                "internalType": "uint256",
+                "name": "epochStart",
+                "type": "uint256"
             }
         ],
         "name": "BorrowExecuted",
+        "type": "event"
+    },
+    {
+        "anonymous": false,
+        "inputs": [
+            {
+                "indexed": true,
+                "internalType": "address",
+                "name": "originator",
+                "type": "address"
+            }
+        ],
+        "name": "BorrowRepaid",
         "type": "event"
     },
     {
@@ -88,6 +107,12 @@
         "inputs": [
             {
                 "indexed": false,
+                "internalType": "address",
+                "name": "borrower",
+                "type": "address"
+            },
+            {
+                "indexed": false,
                 "internalType": "uint256",
                 "name": "seizedAmount",
                 "type": "uint256"
@@ -110,12 +135,6 @@
                 "internalType": "address",
                 "name": "user",
                 "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
             }
         ],
         "name": "DepositApproved",
@@ -169,62 +188,6 @@
             }
         ],
         "name": "DepositRequested",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": true,
-                "internalType": "uint256",
-                "name": "epochId",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "totalDeposits",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "totalWithdrawals",
-                "type": "uint256"
-            }
-        ],
-        "name": "EpochProcessed",
-        "type": "event"
-    },
-    {
-        "anonymous": false,
-        "inputs": [
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "requestId",
-                "type": "uint256"
-            },
-            {
-                "indexed": true,
-                "internalType": "address",
-                "name": "user",
-                "type": "address"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            },
-            {
-                "indexed": false,
-                "internalType": "uint256",
-                "name": "timestamp",
-                "type": "uint256"
-            }
-        ],
-        "name": "PartialWithdrawalFilled",
         "type": "event"
     },
     {
@@ -341,25 +304,6 @@
         "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "name": "activeUserList",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
         "inputs": [],
         "name": "admin",
         "outputs": [
@@ -374,85 +318,7 @@
     },
     {
         "inputs": [],
-        "name": "approvedRequestEnd",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "name": "approvedRequestQueue",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "user",
-                "type": "address"
-            },
-            {
-                "internalType": "uint256",
-                "name": "requestId",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "timestamp",
-                "type": "uint256"
-            },
-            {
-                "internalType": "bool",
-                "name": "isWithdraw",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "approvedRequestStart",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
         "name": "blocksPerYear",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "borrowCounter",
         "outputs": [
             {
                 "internalType": "uint256",
@@ -487,25 +353,6 @@
                 "internalType": "bool",
                 "name": "repaid",
                 "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "name": "borrowerList",
-        "outputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
             }
         ],
         "stateMutability": "view",
@@ -571,43 +418,11 @@
     },
     {
         "inputs": [],
-        "name": "compound",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [],
         "name": "currentEpoch",
         "outputs": [
             {
                 "internalType": "uint256",
                 "name": "startBlock",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "endBlock",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "totalDeposits",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "totalWithdrawals",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "rewardsDistributed",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "aprBps",
                 "type": "uint256"
             }
         ],
@@ -688,76 +503,6 @@
         "type": "function"
     },
     {
-        "inputs": [],
-        "name": "epochCounter",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "epochDuration",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "name": "epochs",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "startBlock",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "endBlock",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "totalDeposits",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "totalWithdrawals",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "rewardsDistributed",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "aprBps",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
         "inputs": [
             {
                 "internalType": "uint256",
@@ -771,7 +516,18 @@
         "type": "function"
     },
     {
-        "inputs": [],
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "userAddr",
+                "type": "address"
+            },
+            {
+                "internalType": "uint256",
+                "name": "reward",
+                "type": "uint256"
+            }
+        ],
         "name": "harvestReward",
         "outputs": [],
         "stateMutability": "nonpayable",
@@ -781,46 +537,13 @@
         "inputs": [
             {
                 "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "name": "isActiveUser",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "name": "isBorrower",
-        "outputs": [
-            {
-                "internalType": "bool",
-                "name": "",
-                "type": "bool"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
                 "name": "outAddress",
                 "type": "address"
+            },
+            {
+                "internalType": "address[]",
+                "name": "unPaidBorrowerList",
+                "type": "address[]"
             }
         ],
         "name": "liquidateCollateral",
@@ -843,19 +566,6 @@
     },
     {
         "inputs": [],
-        "name": "maxEpochsBeforeLiquidation",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
         "name": "poolLSRWA",
         "outputs": [
             {
@@ -865,26 +575,6 @@
             }
         ],
         "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "poolUSDC",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [],
-        "name": "processEpoch",
-        "outputs": [],
-        "stateMutability": "nonpayable",
         "type": "function"
     },
     {
@@ -920,6 +610,11 @@
                 "internalType": "struct LSRWAExpress.ApprovedRequest[]",
                 "name": "requests",
                 "type": "tuple[]"
+            },
+            {
+                "internalType": "address[]",
+                "name": "borrowList",
+                "type": "address[]"
             }
         ],
         "name": "processRequests",
@@ -1006,32 +701,6 @@
         "type": "function"
     },
     {
-        "inputs": [],
-        "name": "rewardAPR",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "bool",
-                "name": "status",
-                "type": "bool"
-            }
-        ],
-        "name": "setAutoCompound",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
         "inputs": [
             {
                 "internalType": "uint256",
@@ -1045,77 +714,6 @@
         "type": "function"
     },
     {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "blocks",
-                "type": "uint256"
-            }
-        ],
-        "name": "setEpochDuration",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "epoch",
-                "type": "uint256"
-            }
-        ],
-        "name": "setMaxEpochsBeforeLiquidation",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "aprBps",
-                "type": "uint256"
-            }
-        ],
-        "name": "setRewardAPR",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "uint256",
-                "name": "amount",
-                "type": "uint256"
-            }
-        ],
-        "name": "toupUSDC",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "name": "unclaimedRewards",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "",
-                "type": "uint256"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
         "inputs": [],
         "name": "usdc",
         "outputs": [
@@ -1123,40 +721,6 @@
                 "internalType": "contract IERC20",
                 "name": "",
                 "type": "address"
-            }
-        ],
-        "stateMutability": "view",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "address",
-                "name": "",
-                "type": "address"
-            }
-        ],
-        "name": "users",
-        "outputs": [
-            {
-                "internalType": "uint256",
-                "name": "deposit",
-                "type": "uint256"
-            },
-            {
-                "internalType": "uint256",
-                "name": "reward",
-                "type": "uint256"
-            },
-            {
-                "internalType": "bool",
-                "name": "autoCompound",
-                "type": "bool"
-            },
-            {
-                "internalType": "uint256",
-                "name": "lastHarvestBlock",
-                "type": "uint256"
             }
         ],
         "stateMutability": "view",

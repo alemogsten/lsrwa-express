@@ -8,98 +8,135 @@ import { MongoClient } from 'mongodb';
 import dotenv from "dotenv";
 dotenv.config();
 
+const USDC_DECIMALS = parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS || '6');
+
 const provider = new ethers.WebSocketProvider(process.env.SEPOLIA_WSS);
 const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, provider);
 
 const mongo = new MongoClient(process.env.MONGO_URI);
 await mongo.connect();
 const db = mongo.db('lsrwa');
-const collection = db.collection('requests');
+const requestsCollection = db.collection('requests');
+const borrowsCollection = db.collection('borrows');
+const usersCollection = db.collection('users');
 
 vault.on("DepositRequested", async (requestId, user, amount, timestamp) => {
   console.log("DepositRequest:", requestId.toString(), user, amount, timestamp);
-  await collection.insertOne({
+  await requestsCollection.insertOne({
     requestId: Number(requestId),
     user,
-    amount: formatUnits(amount, parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS || '6')),
+    amount: Number(formatUnits(amount, USDC_DECIMALS)),
     timestamp: Number(timestamp),
     isWithdraw: false,
     processed: false,
-    approved: false,
     executed: false
   });
-  console.log('Deposit stored:', requestId.toString());
+
+  await usersCollection.updateOne(
+    { address: user },
+    {
+      $inc: {
+        deposit: 0
+      },
+      $setOnInsert: {
+        address: user,
+        reward: 0,
+        autoCompound: false
+      }
+    },
+    { upsert: true }
+  );
+});
+
+vault.on("DepositApproved", async(requestId, user) => {
+  console.log("DepositApproved:", requestId.toString(), user);
+  await requestsCollection.updateOne(
+    { requestId: Number(requestId), isWithdraw: false },
+    { $set: { processed: true } }
+  );
 });
 
 vault.on("DepositCancelled", async (requestId, user) => {
   console.log("DepositCancelled:", requestId.toString(), user);
-  await collection.deleteOne({ requestId: Number(requestId),isWithdraw: false });
+  await requestsCollection.deleteOne({ requestId: Number(requestId), isWithdraw: false });
 });
 
 vault.on("WithdrawRequested", async (requestId, user, amount, timestamp) => {
   console.log("WithdrawRequest:", requestId.toString(), user, amount, timestamp);
-  await collection.insertOne({
+  await requestsCollection.insertOne({
     requestId: Number(requestId),
     user,
-    amount: formatUnits(amount, parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS || '6')),
+    amount: Number(formatUnits(amount, USDC_DECIMALS)),
     timestamp: Number(timestamp),
     isWithdraw: true,
     processed: false,
-    approved: false,
     executed: false
   });
-  console.log('Withdraw stored:', requestId.toString());
 });
 
 vault.on("WithdrawExecuted", async(requestId, user, amount) => {
   console.log("WithdrawExecute:", requestId.toString(), user, amount);
-  await collection.updateOne(
-    { requestId: Number(requestId),isWithdraw: true },
+  await requestsCollection.updateOne(
+    { requestId: Number(requestId), isWithdraw: true },
     { $set: { executed: true } }
   );
 });
 
-vault.on("DepositApproved", async(requestId, user, amount) => {
-  try {
-    console.log("DepositApprove:", requestId.toString(), user, amount);
-    await collection.updateOne(
-      { requestId: Number(requestId),isWithdraw: false },
-      { $set: { processed: true } }
-    );
-    } catch (error) {
-    console.error("Error handling DepositApproved event:", error);
-  }
-});
-
 vault.on("WithdrawApproved", async(requestId, user, amount) => {
   console.log("WithdrawApproved:", requestId.toString(), user, amount);
-  await collection.updateOne(
-    { requestId: Number(requestId),isWithdraw: true },
-    { $set: { processed: true, amount: formatUnits(amount, parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS || '6')) } }
+  await requestsCollection.updateOne(
+    { requestId: Number(requestId), isWithdraw: true },
+    { $set: { processed: true, amount: Number(formatUnits(amount, USDC_DECIMALS)) } }
   );
 });
 
-vault.on("PartialWithdrawalFilled", (requestId, user, amount, timestamp) => {
-  console.log("PartialWithdrawalFill:", requestId.toString(), user, amount, timestamp);
-  // Optionally write to local DB, file, or call internal API
+vault.on("CollateralDeposited", async (user, amount) => {
+  console.log("CollateralDeposited:", user, amount);
+  await borrowsCollection.insertOne({
+    user,
+    amount: 0,
+    collateral: Number(formatUnits(amount, 18)),
+    repaid: false,
+    epochStart: 0
+  });
 });
 
-vault.on("BorrowRequested", (user, amount) => {
-  console.log("BorrowRequest:", user, amount);
-  // Optionally write to local DB, file, or call internal API
+vault.on("BorrowRequested", async (user, amount) => {
+  console.log("BorrowRequested:", user, amount);
+  await borrowsCollection.updateOne(
+    { user: user },
+    { $set: { amount: Number(formatUnits(amount, USDC_DECIMALS)) } }
+  );
 });
 
-vault.on("CollateralDeposited", (user, amount) => {
-  console.log("CollateralDeposit:", user, amount);
-  // Optionally write to local DB, file, or call internal API
+vault.on("BorrowExecuted", async (user, amount, epochStart) => {
+  console.log("BorrowExecuted:", user, amount, epochStart);
+  await borrowsCollection.updateOne(
+    { user: user },
+    { $set: { epochStart: Number(epochStart) } }
+  );
 });
 
-vault.on("CollateralLiquidated", (amount) => {
-  console.log("CollateralLiquidat:", amount);
-  // Optionally write to local DB, file, or call internal API
+vault.on("BorrowRepaid", async (user) => {
+  console.log("BorrowRepaid:", user);
+  await borrowsCollection.updateOne(
+    { user: user },
+    { $set: { repaid: true } }
+  );
 });
 
-vault.on("EpochProcessed", (currentEpoch, depositCounter, withdrawCounter) => {
-  console.log("EpochProcess:", 'currentEpoch ->'+currentEpoch, 'depositCounter->'+depositCounter, 'withdrawCounter->'+withdrawCounter);
-  // Optionally write to local DB, file, or call internal API
+vault.on("CollateralLiquidated", async (borrower, amount) => {
+  console.log("CollateralLiquidated:", borrower, amount);
+  await borrowsCollection.updateOne(
+    { user: borrower },
+    { $set: { repaid: true } }
+  );
+});
+
+vault.on("RewardHarvested", async (user, amount) => {
+  console.log("RewardHarvested:", user, amount);
+  await usersCollection.updateOne(
+    { address: user },
+    { $set: { reward: 0 } }
+  );
 });

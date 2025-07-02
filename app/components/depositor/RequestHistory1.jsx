@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import clsx from "clsx";
 import HistoryCard from "./HistoryCard";
-import WalletConnectButton from "./WalletConnectButton";
+import WalletConnectButton from "../WalletConnectButton";
 import { useDepositorRequests } from "@/hooks/useDepositorRequests";
 
 import { useAccount } from 'wagmi';

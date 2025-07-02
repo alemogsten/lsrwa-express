@@ -1,4 +1,4 @@
-// app/api/requests/route.js
+// app/api/depositor/requests/route.js
 import clientPromise from '@/lib/mongo';
 import { NextResponse } from 'next/server';
 // import { useDepositorRequests } from "@/hooks/useDepositorRequests";

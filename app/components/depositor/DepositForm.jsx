@@ -6,6 +6,7 @@ import { useWallet } from "@/hooks/useWallet";
 import vaultAbi from "@/abis/Vault.json";
 import erc20Abi from "@/abis/ERC20.json";
 import { connectWallet } from "@/utils/wallet";
+import axios from "axios";
 
 export default function DepositForm() {
   const {
@@ -43,6 +44,9 @@ export default function DepositForm() {
       await depositTx.wait();
 
       setStatus("Requested deposit!");
+
+      const res = await axios.post('/api/depositor/harvest-reward', {address:address});
+
     } catch (error) {
       console.error(error);
       setStatus("Error: " + (error?.reason || error?.message));

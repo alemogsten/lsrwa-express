@@ -1,60 +1,21 @@
 'use client';
-import RequestHistory from "./components/RequestHistory";
+import RequestHistory from "./components/depositor/RequestHistory";
 import SummaryCard from "./components/SummaryCard";
-import WalletInfoCard from "./components/WalletInfoCard";
-import AccountCard from "./components/AccountCard";
-import PerformanceCard from "./components/PerformanceCard";
+import WalletInfoCard from "./components/depositor/WalletInfoCard";
+import AccountCard from "./components/depositor/AccountCard";
+import PerformanceCard from "./components/depositor/PerformanceCard";
 import EpochInfoCard from "./components/EpochInfoCard";
 import Image from 'next/image';
 
 import { useWallet } from '@/hooks/useWallet';
+import { useSettings } from '@/hooks/useSettings';
 import clsx from "clsx";
 
 export default function Home() {
   const {
-    address,
     isConnected,
-    disconnect,
-    balance,
-    symbol,
   } = useWallet();
-  const histoires = [
-    {
-      type: 1,
-      timestamp: '1748217600',
-      id: 9,
-      amount: 500,
-      status: 3
-    },
-    {
-      type: 2,
-      timestamp: '1748217600',
-      id: 10,
-      amount: 500,
-      status: 1
-    },
-    {
-      type: 1,
-      timestamp: '1748217600',
-      id: 11,
-      amount: 500,
-      status: 2
-    },
-    {
-      type: 2,
-      timestamp: '1748217600',
-      id: 13,
-      amount: 500,
-      status: 2
-    },
-    {
-      type: 2,
-      timestamp: '1748217600',
-      id: 14,
-      amount: 500,
-      status: 3
-    },
-  ]
+const { rewardAPR, epochDuration, isLoading } = useSettings();
   return (
     <main className="px-[20px] md:px-[66px] xl:px-[120px] py-20">
       
@@ -85,7 +46,7 @@ export default function Home() {
           <WalletInfoCard />
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
             <AccountCard />
-            <PerformanceCard />
+            <PerformanceCard rewardAPR={rewardAPR}/>
           </div>
         </div>
         }
@@ -96,7 +57,7 @@ export default function Home() {
       {
         isConnected ? 
         <div className="mt-8">
-          <EpochInfoCard />
+          <EpochInfoCard epochDuration={epochDuration}/>
         </div> : <></>
       }
       

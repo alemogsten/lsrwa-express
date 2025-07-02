@@ -1,96 +1,87 @@
 'use client';
 
-import { useState } from "react";
-import { useAccount, useReadContracts, useWriteContract } from 'wagmi';
-import vaultAbi from '@/abis/Vault.json';
-import { formatUnits } from 'ethers';
-import {formatNumber} from '@/utils/helper'
-
-const decimals = parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS || '6');
-const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
+import { useState, useEffect } from "react";
+import { useAccount } from 'wagmi';
+import axios from 'axios';
 
 export function useDepositorAccount() {
+  const [isLoading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [compounding, setCompounding] = useState(false);
+  const [autocompounding, setAutoCompounding] = useState(false);
   const [harvesting, setHarvesting] = useState(false);
+  const [deposited, setDeposit] = useState(0);
+  const [autoCompound, setAutoCompound] = useState(false);
+  const [reward, setReward] = useState(0);
   const { address } = useAccount();
-  const { writeContractAsync } = useWriteContract();
 
-  const { data, isLoading, refetch, error } = useReadContracts({
-    contracts: [
-      {
-        address: VAULT_ADDRESS,
-        abi: vaultAbi,
-        functionName: 'users',
-        args: [address],
-      },
-      {
-        address: VAULT_ADDRESS,
-        abi: vaultAbi,
-        functionName: 'rewardAPR',
-      },
-    ],
-    allowFailure: false,
-    query: {
-      enabled: !!address,
-    },
-  });
-
-  const setAutoCompound = async (status) => {
-    
+  const fetchAccount = async () => {
     try {
-      await writeContractAsync({
-        address: VAULT_ADDRESS,
-        abi: vaultAbi,
-        functionName: 'setAutoCompound',
-        args: [status],
-      });
+      setLoading(true);
+      const res = await axios.get('/api/depositor', { params: {address:address} });
+      const user = res.data.user;
+      if(user) {
+        setDeposit(parseFloat(user.deposit));
+        setReward(parseFloat(user.reward));
+        setAutoCompound(user.autoCompound);
+      }
     } catch (err) {
-      console.error('Update failed:', err);
+        console.error("Failed to fetch account:", err);
+        setError(err);
     } finally {
+      setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if(address && !isLoading)
+    fetchAccount();
+  }, [address]);
+
+  const handleAutoCompound = async (status) => {
+    try {
+      setAutoCompounding(true);
+      const res = await axios.post('/api/depositor/set_autocompound', {address, status});
+    } catch (err) {
+        console.error("Failed to set autocompound:", err);
+        setError(err);
+    } finally {
+      setAutoCompounding(false);
+    }
+  }
+
   const compound = async () => {
     setCompounding(true);
     try {
-      await writeContractAsync({
-        address: VAULT_ADDRESS,
-        abi: vaultAbi,
-        functionName: 'compound',
-      });
-      refetch();
+      const res = await axios.post('/api/depositor/compound', {address});
+      await fetchAccount();
     } catch (err) {
       console.error('Update failed:', err);
+      setError(err);
     } finally {
       setCompounding(false);
     }
   }
+
   const harvestReward = async () => {
     setHarvesting(true);
     try {
-      await writeContractAsync({
-        address: VAULT_ADDRESS,
-        abi: vaultAbi,
-        functionName: 'harvestReward',
-      });
-      await refetch();
+      const res = await axios.post('/api/depositor/harvest-reward', {address, reward});
+      await fetchAccount();
     } catch (err) {
       console.error('Update failed:', err);
+      setError(err);
     } finally {
       setHarvesting(false);
     }
   }
 
-  const deposited = formatNumber(formatUnits(data?.[0][0] ?? 0n, decimals)) ;
-  const reward = formatNumber(formatUnits(data?.[0][1] ?? 0n, decimals)) ;
-  const autoCompound = data?.[0][2] ?? false ;
-  const rewardAPR = Number(data?.[1] ?? 0n) * 0.01 ;
-
   return {
     deposited,
     reward,
-    rewardAPR,
     autoCompound,
-    setAutoCompound,
+    autocompounding,
+    handleAutoCompound,
     compound,
     compounding,
     harvestReward,

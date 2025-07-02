@@ -1,17 +1,14 @@
 // app/api/admin/set_max_epoch/route.js
 import { NextResponse } from "next/server";
-import { ethers } from "ethers";
-import vaultAbi from "@/abis/Vault.json";
+import clientPromise from '@/lib/mongo';
 
 export async function POST(request) {
   try {
     const {value} = await request.json();
-    const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_SEPOLIA_RPC);
-    const signer = new ethers.Wallet(process.env.ADMIN_PRIVATE_KEY, provider);
-    const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
-
-    const tx = await vault.setMaxEpochsBeforeLiquidation(value);
-    await tx.wait();
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGO_DB);
+    const collection = db.collection('settings');
+    await collection.updateOne({}, {$set: {maxEpochsBeforeLiquidation: value}});
 
     return NextResponse.json({ status: true });
   } catch (error) {

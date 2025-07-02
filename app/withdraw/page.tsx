@@ -1,6 +1,6 @@
 'use client';
 
-import WithdrawForm from '../components/WithdrawForm';
+import WithdrawForm from '../components/depositor/WithdrawForm';
 
 export default function Withdraw() {
 

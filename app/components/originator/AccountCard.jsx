@@ -5,6 +5,7 @@ import { ethers } from "ethers";
 import { connectWallet } from "@/utils/wallet";
 import { useWallet } from "@/hooks/useWallet";
 import { useOriginatorAccount } from '@/hooks/useOriginatorAccount';
+import { useSettings } from '@/hooks/useSettings';
 import erc20Abi from "@/abis/ERC20.json";
 import vaultAbi from "@/abis/Vault.json";
 
@@ -17,13 +18,13 @@ export default function AccountCard() {
     deposited, 
     borrowed,
     repaymentRequiredEpochId,
-    maxEpochsBeforeLiquidation,
     currentEpochId,
     repaid, 
     refetch,
     isLoading
    } = useOriginatorAccount();
 
+  const {maxEpochsBeforeLiquidation} = useSettings();
 
   const handleRepay = async () => {
     try {
