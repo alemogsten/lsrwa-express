@@ -11,20 +11,22 @@ contract LSRWAExpress {
     IERC20 public immutable usdc;
     IERC20 public immutable lsrwa;
 
+    address public admin;
+
     // --- Constants ---
     uint256 public constant BPS_DIVISOR = 10000;
+    uint256 public blocksPerYear= 2_300_000;
 
     // --- State Variables ---
-    address public admin;
-    Epoch public currentEpoch;
-    uint256 public epochDuration; // in blocks
-    uint256 public rewardAPR;
-    uint256 public maxEpochsBeforeLiquidation;
+    
+    uint256 public epochDuration= 40320; // in blocks
+    uint256 public rewardAPR= 500;
+    uint256 public maxEpochsBeforeLiquidation= 2;
+    uint256 public collateralRatio;
 
     // --- Mappings ---
     mapping(uint256 => DepositRequest) public depositRequests;
     mapping(uint256 => WithdrawRequest) public withdrawRequests;
-    mapping(uint256 => Epoch) public epochs;
     mapping(address => UserInfo) public users;
     mapping(address => BorrowRequest) public borrowRequests;
     mapping(address => uint256) public collateralDeposits;
@@ -32,17 +34,13 @@ contract LSRWAExpress {
     uint256 public borrowingUSDC;
     uint256 public poolLSRWA;
 
-    uint256 public collateralRatio;
-
     uint256 public depositCounter;
     uint256 public withdrawCounter;
     uint256 public epochCounter;
-    uint256 public borrowCounter;
-    uint256 public currentEpochId;
-
+    uint256 public currentEpochId= 1;
     uint256 public repaymentRequiredEpochId;
 
-    uint256 public blocksPerYear;
+    Epoch public currentEpoch;
 
     // --- Structs ---
     struct DepositRequest {
@@ -115,11 +113,6 @@ contract LSRWAExpress {
         admin = msg.sender;
         usdc = IERC20(_usdc);
         lsrwa = IERC20(_lsrwa);
-        epochDuration = 40320; // ~1 week in blocks
-        maxEpochsBeforeLiquidation = 2;
-        currentEpochId = 1;
-        rewardAPR = 500; // 5% APR
-        blocksPerYear = 2_300_000;
     }
 
     function requestDeposit(uint256 amount) external returns (uint256 requestId) {
@@ -325,7 +318,7 @@ contract LSRWAExpress {
             aprBps: rewardAPR
         });
 
-        epochs[currentEpochId] = currentEpoch;
+        // epochs[currentEpochId] = currentEpoch;
 
         emit EpochProcessed(currentEpochId, totalActiveDeposits, totalWithdrawals);
 
