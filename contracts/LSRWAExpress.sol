@@ -369,7 +369,7 @@ contract LSRWAExpress {
         emit CollateralLiquidated(liquidateLSRWA);
     }
 
-    function getRequests(bool processed, bool pagination, uint start, uint limit, address owner, bool isAdmin)
+    function getRequests(bool processed, uint page, uint limit, address owner, bool isAdmin)
         external
         view
         returns (Request[] memory)
@@ -378,13 +378,10 @@ contract LSRWAExpress {
 
         uint j = 0;
         
-        if(pagination) {
-            uint i = start;
-            while (j < limit) 
-            {
+        if(page == 0) {
+            for (uint i = 0; i < requestCounter; i++) {
                 Request storage req = requests[i];
                 if(processed != req.processed || (!req.isWithdraw && req.executed) || (!isAdmin && owner != req.user)) {
-                    i++;
                     continue;
                 }
                 trequests[j] = req;
@@ -392,9 +389,12 @@ contract LSRWAExpress {
             }
         }
         else {
-            for (uint i = 0; i < requestCounter; i++) {
+            uint i = requestCounter - ((page-1)*limit) - 1;
+            while (j < limit && i >= 0) 
+            {
                 Request storage req = requests[i];
-                if(processed != req.processed || (!req.isWithdraw && req.executed) || (!isAdmin && owner != req.user)) {
+                i--;
+                if(processed != req.processed || (!isAdmin && owner != req.user)) {
                     continue;
                 }
                 trequests[j] = req;
@@ -405,7 +405,7 @@ contract LSRWAExpress {
         return trequests;
     }
 
-    function getBorrowRequests(address[] calldata borrowers, bool repaid, bool pagination, uint256 start, uint256 limit)
+    function getBorrowRequests(address[] calldata borrowers, bool repaid, uint page, uint limit)
         external
         view
         returns (BorrowRequest[] memory)
@@ -414,25 +414,25 @@ contract LSRWAExpress {
 
         uint j = 0;
         
-        if(pagination) {
-            uint i = start;
-            while (j < limit) 
-            {
-                BorrowRequest storage req = borrowRequests[borrowers[i]];
-                if(repaid == req.repaid) {
-                    borrows[j] = req;
-                    j++;
-                }
-                i++;
-            }
-        }
-        else {
+        if(page == 0) {
             for (uint i = 0; i < borrowers.length; i++) {
                 BorrowRequest storage req = borrowRequests[borrowers[i]];
                 if(repaid == req.repaid) {
                     borrows[j] = req;
                     j++;
                 }
+            }
+        }
+        else {
+            uint i = borrowers.length - ((page-1)*limit) - 1;
+            while (j < limit && i >= 0) 
+            {
+                BorrowRequest storage req = borrowRequests[borrowers[i]];
+                if(repaid == req.repaid) {
+                    borrows[j] = req;
+                    j++;
+                }
+                i--;
             }
         }
 
