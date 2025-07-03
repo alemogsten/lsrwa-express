@@ -602,6 +602,11 @@
 	{
 		"inputs": [
 			{
+				"internalType": "uint256",
+				"name": "kind",
+				"type": "uint256"
+			},
+			{
 				"internalType": "bool",
 				"name": "processed",
 				"type": "bool"
@@ -665,6 +670,16 @@
 				"internalType": "struct LSRWAExpress.Request[]",
 				"name": "",
 				"type": "tuple[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -682,7 +697,7 @@
 		"outputs": [
 			{
 				"internalType": "address[]",
-				"name": "",
+				"name": "filters",
 				"type": "address[]"
 			}
 		],

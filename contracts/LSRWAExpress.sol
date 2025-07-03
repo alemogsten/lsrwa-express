@@ -119,7 +119,7 @@ contract LSRWAExpress {
             amount // uint256 _value
         );
 
-        requestId = ++requestCounter;
+        requestId = requestCounter++;
         requests[requestId] = Request(msg.sender, amount, block.timestamp, false, false, false);
 
         emit DepositRequested(requestId, msg.sender, amount, block.timestamp);
@@ -131,7 +131,7 @@ contract LSRWAExpress {
 
         _forceHarvest(msg.sender);
 
-        requestId = ++requestCounter;
+        requestId = requestCounter++;
         requests[requestId] = Request(msg.sender, amount, block.timestamp, true, false, false);
         emit WithdrawRequested(requestId, msg.sender, amount, block.timestamp);
     }
@@ -372,18 +372,42 @@ contract LSRWAExpress {
     function getRequests(uint kind, bool processed, uint page, uint limit, address owner, bool isAdmin)
         external
         view
-        returns (Request[] memory)
+        returns (Request[] memory, uint[] memory, uint)
     {
-        Request[] memory trequests = new Request[](requestCounter);
+        
+        Request[] memory temp = new Request[](requestCounter);
+        uint[] memory tempIds = new uint[](requestCounter);
 
         uint j = 0;
-        
+        uint counter = 0;
         if(page == 0) {
             for (uint i = 0; i < requestCounter; i++) {
                 Request storage req = requests[i];
                 if(processed != req.processed || (!req.isWithdraw && req.executed) || (!isAdmin && owner != req.user)) {
                     continue;
                 }
+                temp[counter] = req;
+                tempIds[counter] = i;
+                counter++;
+            }
+        }
+        else {
+            for (uint i = 0; i < requestCounter; i++) {
+                Request storage req = requests[i];
+                if((isAdmin && processed != req.processed) || (!isAdmin && owner != req.user)) {
+                    continue;
+                }
+                if(kind == 1 && req.isWithdraw) continue ;
+                if(kind == 2 && !req.isWithdraw) continue ;
+                temp[counter] = req;
+                counter++;
+            }
+        }
+        Request[] memory trequests = new Request[](counter);
+        uint[] memory ids = new uint[](counter);
+        if(page == 0) {
+            for (uint i = 0; i < counter; i++) {
+                Request memory req = temp[i];
                 trequests[j] = req;
                 j++;
             }
@@ -391,22 +415,20 @@ contract LSRWAExpress {
         else {
             // pagination
             page = page - 1;
-            uint end = requestCounter > page * limit ? requestCounter - (page * limit) : 0;
+            uint end = counter > page * limit ? counter - (page * limit) : 0;
             uint start = end >= limit ? end - limit : 0;
 
+            trequests = new Request[](end-start);
+
             for (uint i = end; i > start; i--) {
-                Request storage req = requests[i-1];
-                if(isAdmin && processed != req.processed || (!isAdmin && owner != req.user)) {
-                    continue;
-                }
-                if(kind == 1 && req.isWithdraw) continue ;
-                if(kind == 2 && !req.isWithdraw) continue ;
+                Request memory req = temp[i-1];
                 trequests[j] = req;
+                ids[j] = tempIds[i-1];
                 j++;
             }
         }
 
-        return trequests;
+        return (trequests, ids, counter);
     }
 
     function getBorrowRequests(address[] calldata borrowers) onlyAdmin
@@ -426,16 +448,20 @@ contract LSRWAExpress {
     function getUnpaidBorrowerList(address[] calldata borrowers) onlyAdmin
         external
         view
-        returns (address[] memory)
+        returns (address[] memory filters)
     {
         uint j = 0;
-        address[] memory filters = new address[](borrowers.length);
+        address[] memory temp = new address[](borrowers.length);
         for (uint i = 0; i < borrowers.length; i++) {
             BorrowRequest storage req = borrowRequests[borrowers[i]];
             if(!req.repaid) {
-                filters[j] = borrowers[i];
+                temp[j] = borrowers[i];
                 j++;
             }
+        }
+        filters = new address[](j);
+        for (uint i = 0; i < j; i++) {
+            filters[i] = temp[i];
         }
 
         return filters;
