@@ -3,15 +3,11 @@
 import { useState } from 'react';
 import { formatNumber } from '@/utils/helper';
 import axios from 'axios';
+import { useAdminSummary } from '@/hooks/useAdminSummary';
 
-export default function LiquidityTokenCard({
-  borrowingUSDC, 
-  poolLSRWA, 
-  repaymentRequiredEpochId, 
-  currentEpochId, 
-  maxEpochsBeforeLiquidation, 
-  refetch
-}) {
+export default function LiquidityTokenCard() {
+
+  const {borrowingUSDC, poolLSRWA, repaymentRequiredEpochId, currentEpochId, maxEpochsBeforeLiquidation, refetch} = useAdminSummary();
 
   const [loading, setLoading] = useState(false);
   const [address, setAddress] = useState('');

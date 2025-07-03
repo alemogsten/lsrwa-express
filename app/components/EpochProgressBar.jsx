@@ -5,58 +5,55 @@ import { ethers } from 'ethers';
 import { format, formatDuration, intervalToDuration } from 'date-fns';
 import vaultAbi from '@/abis/Vault.json';
 
-
 const AVERAGE_BLOCK_TIME_MS = process.env.NEXT_PUBLIC_BLOCK_TIME * 1000;
 const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_SEPOLIA_RPC);
 const vaultAddress = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
 
-export default function EpochProgressBar({refresh=false, epochDuration}) {
+export default function EpochProgressBar({refresh=false}) {
   const [progress, setProgress] = useState(0);
   const [timeLeftMs, setTimeLeftMs] = useState(0);
   const [startTimeMs, setStartTimeMs] = useState(0);
-  const [endTimestampMs, setEndTimestampMs] = useState(100);
+  const [endTimestampMs, setEndTimestampMs] = useState(0);
 
-  let interval;
   useEffect(() => {
+    let interval;
 
     async function getEpochBlocks() {
       const vault = new ethers.Contract(vaultAddress, vaultAbi, provider);
       const epoch = await vault.currentEpoch();
-
-      const startBlock = Number(epoch); // assuming it's the block number
-      const durationMs = epochDuration * AVERAGE_BLOCK_TIME_MS;
+      
+      const startBlock = Number(epoch.startBlock);
+      const endBlock = Number(epoch.endBlock);
+      
+      const durationMs = (endBlock - startBlock) * AVERAGE_BLOCK_TIME_MS;
 
       const block = await provider.getBlock(startBlock);
       const startTimestampMs = Number(block.timestamp) * 1000;
-
-      const endTimestampMs = startTimestampMs + durationMs;
-
       setStartTimeMs(startTimestampMs);
-      setEndTimestampMs(endTimestampMs);
+      
+      const endTimestampMs = startTimestampMs + durationMs;
+      setEndTimestampMs(endTimestampMs)
+      displayTime()
+      function displayTime() {
+        const now = Date.now();
+        
+        const timeLeft = Math.max(0, endTimestampMs - now);
+        
+        const progressPercent = Math.min(100, ((durationMs - timeLeft) / durationMs) * 100);
 
-      // Initial display
-      updateProgress(endTimestampMs, durationMs);
+        setTimeLeftMs(timeLeft);
+        setProgress(progressPercent);
+      }
 
-      // Start interval
       interval = setInterval(() => {
-        updateProgress(endTimestampMs, durationMs);
+        displayTime();
       }, 60000);
-    }
-
-    function updateProgress(endMs, durationMs) {
-      const now = Date.now();
-      const timeLeft = Math.max(0, endMs - now);
-      const elapsed = durationMs - timeLeft;
-      const progressPercent = Math.min(100, (elapsed / durationMs) * 100);
-
-      setTimeLeftMs(timeLeft);
-      setProgress(progressPercent);
     }
 
     getEpochBlocks();
 
     return () => clearInterval(interval);
-  }, [epochDuration]);
+  }, [refresh]);
 
   const formattedTimeLeft = formatDuration(
     intervalToDuration({ start: 0, end: timeLeftMs }),

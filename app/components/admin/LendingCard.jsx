@@ -3,15 +3,11 @@
 import { useState } from 'react';
 import { formatNumber } from '@/utils/helper';
 import axios from 'axios';
+import { useAdminSummary } from '@/hooks/useAdminSummary';
 
-export default function LendingCard({
-        borrowingUSDC, 
-        repaymentRequiredEpochId,
-        currentEpochId, 
-        maxEpochsBeforeLiquidation, 
-        refetch
-    }
-) {  
+export default function LendingCard() {
+
+  const {borrowingUSDC, repaymentRequiredEpochId, currentEpochId, maxEpochsBeforeLiquidation, refetch} = useAdminSummary();
 
   const [loading, setLoading] = useState(false);
 

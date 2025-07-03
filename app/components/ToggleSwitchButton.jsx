@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export default function ToggleSwitchButton({checked, disable, handleClick}) {
+export default function ToggleSwitchButton({checked, disable, handleAutoCompoundClick}) {
   const [isChecked, setIsChecked] = useState(false);
 
   useEffect(() => {
@@ -9,7 +9,7 @@ export default function ToggleSwitchButton({checked, disable, handleClick}) {
 
   const handleToggle = () => {
     setIsChecked(prev => !prev);
-    handleClick();
+    handleAutoCompoundClick();
   };
 
   return (

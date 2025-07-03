@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import clsx from "clsx";
 import HistoryCard from "./HistoryCard";
-import WalletConnectButton from "../WalletConnectButton";
+import WalletConnectButton from "./WalletConnectButton";
 
 
 import { useAccount } from 'wagmi';
@@ -27,7 +27,7 @@ export default function RequestHistory() {
 
     const fetchRequests = () => {
       axios
-        .post('/api/depositor/requests', { address })
+        .post('/api/requests', { address })
         .then((res) => setRequests(res.data.requests))
         .finally(() => setLoading(false));
     }
@@ -42,7 +42,7 @@ export default function RequestHistory() {
         <p>No active requests found.</p>
       ) :
         requests.map(history => (
-          <HistoryCard fetchRequests={fetchRequests} key={history._id} isWithdraw={history.isWithdraw} timestamp={history.timestamp} id={history.requestId} amount={history.amount} processed={history.processed} executed={history.executed} />  
+          <HistoryCard fetchRequests={fetchRequests} key={history.requestId} isWithdraw={history.isWithdraw} timestamp={history.timestamp} id={history.requestId} amount={history.amount} processed={history.processed} executed={history.executed} />  
         ))
       }
       <div className="mt-8 justify-items-center">

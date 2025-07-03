@@ -12,7 +12,8 @@ export async function GET(request) {
   const type = url.searchParams.get('type');     // 'deposit' or 'withdraw'
 
   const query = {};
-  if (status === 'pending') {query.processed = false;}
+  if (status === 'pending') {query.processed = false;query.approved = false;}
+  if (status === 'approved') {query.processed = false;query.approved = true;}
   if (status === 'completed') query.processed = true;
   if (status === 'executed') query.executed = true;
   if (type === 'deposit' || type === 'withdraw') query.isWithdraw = type === 'withdraw';

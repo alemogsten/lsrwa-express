@@ -36,6 +36,11 @@ export function useOriginatorAccount() {
       {
         abi: vaultAbi,
         address: VAULT_ADDRESS,
+        functionName: 'maxEpochsBeforeLiquidation',
+      },
+      {
+        abi: vaultAbi,
+        address: VAULT_ADDRESS,
         functionName: 'currentEpochId',
       }
     ],
@@ -50,7 +55,8 @@ export function useOriginatorAccount() {
   const borrowed = borrowRequest!= null && Number(borrowRequest[1]) != 0 && borrowRequest[2] == false ? formatUnits(borrowRequest[0], 18) : 0;
   const collateralRatio = Number(data?.[2]?? 0n) ;
   const repaymentRequiredEpochId = Number(data?.[3]?? 0n) ;
-  const currentEpochId = Number(data?.[4]?? 0n) ;
+  const maxEpochsBeforeLiquidation = Number(data?.[4]?? 0n) ;
+  const currentEpochId = Number(data?.[5]?? 0n) ;
   const repaid = !isLoading && borrowRequest[2] == false && Number(borrowRequest[1]) != 0 && Number(repaymentRequiredEpochId) != 0;
 
   return {
@@ -58,6 +64,7 @@ export function useOriginatorAccount() {
     borrowed,
     collateralRatio,
     repaymentRequiredEpochId,
+    maxEpochsBeforeLiquidation,
     currentEpochId,
     repaid,
     refetch,

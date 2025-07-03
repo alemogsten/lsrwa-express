@@ -1,26 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useReadContracts } from 'wagmi';
-import { ethers, formatUnits } from "ethers";
+import { formatUnits } from "ethers";
 import vaultAbi from '@/abis/Vault.json';
-import usdcAbi from '@/abis/ERC20.json';
 
 const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
-const USDC_ADDRESS = process.env.NEXT_PUBLIC_USDC_ADDRESS;
 const USDC_DECIMAL = parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS || '6');
-const SEPOLIA_RPC_URL = process.env.NEXT_PUBLIC_SEPOLIA_RPC;
-
 
 export function useAdminSummary() {
-  
-  const [poolUSDC, setPoolUSDC] = useState(0);
-  const provider = new ethers.JsonRpcProvider(SEPOLIA_RPC_URL);
-  const usdc = new ethers.Contract(USDC_ADDRESS, usdcAbi, provider);
-  
 
   const { data, isLoading, refetch, error } = useReadContracts({
     contracts: [
+      {
+        address: VAULT_ADDRESS,
+        abi: vaultAbi,
+        functionName: 'poolUSDC',
+      },
       {
         abi: vaultAbi,
         address: VAULT_ADDRESS,
@@ -44,25 +39,24 @@ export function useAdminSummary() {
       {
         abi: vaultAbi,
         address: VAULT_ADDRESS,
+        functionName: 'maxEpochsBeforeLiquidation',
+      },
+      {
+        abi: vaultAbi,
+        address: VAULT_ADDRESS,
         functionName: 'currentEpochId',
       }
     ],
     allowFailure: false,
   });
-  
-  useEffect(() => {
-    const fetchPool = async () => {
-      const pool = await usdc.balanceOf(VAULT_ADDRESS);
-      setPoolUSDC(Number(formatUnits(pool, USDC_DECIMAL)));
-    }
-    fetchPool();
-  }, []);
-  
-  const borrowingUSDC = formatUnits(data?.[0] ?? 0n, USDC_DECIMAL);
-  const poolLSRWA = formatUnits(data?.[1] ?? 0n, 18);
-  const collateralRatio = Number(data?.[2]?? 0n) ;
-  const repaymentRequiredEpochId = Number(data?.[3]?? 0n) ;
-  const currentEpochId = Number(data?.[4]?? 0n) ;
+
+  const poolUSDC = formatUnits(data?.[0] ?? 0n, USDC_DECIMAL);
+  const borrowingUSDC = formatUnits(data?.[1] ?? 0n, USDC_DECIMAL);
+  const poolLSRWA = formatUnits(data?.[2] ?? 0n, 18);
+  const collateralRatio = Number(data?.[3]?? 0n) ;
+  const repaymentRequiredEpochId = Number(data?.[4]?? 0n) ;
+  const maxEpochsBeforeLiquidation = Number(data?.[5]?? 0n) ;
+  const currentEpochId = Number(data?.[6]?? 0n) ;
 
   return {
     poolUSDC,
@@ -70,6 +64,7 @@ export function useAdminSummary() {
     poolLSRWA,
     collateralRatio,
     repaymentRequiredEpochId,
+    maxEpochsBeforeLiquidation,
     currentEpochId,
     refetch,
     isLoading,

@@ -1,14 +1,17 @@
 // app/api/admin/set_rewardapr/route.js
 import { NextResponse } from "next/server";
-import clientPromise from '@/lib/mongo';
+import { ethers } from "ethers";
+import vaultAbi from "@/abis/Vault.json";
 
 export async function POST(request) {
   try {
     const {value} = await request.json();
-    const client = await clientPromise;
-    const db = client.db(process.env.MONGO_DB);
-    const collection = db.collection('settings');
-    await collection.updateOne({}, { $set: { rewardAPR: value * 100 } });
+    const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_SEPOLIA_RPC);
+    const signer = new ethers.Wallet(process.env.ADMIN_PRIVATE_KEY, provider);
+    const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
+
+    const tx = await vault.setRewardAPR(value*100);
+    await tx.wait();
 
     return NextResponse.json({ status: true });
   } catch (error) {

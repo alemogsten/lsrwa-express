@@ -26,7 +26,7 @@ contract LSRWAExpress {
     mapping(uint256 => WithdrawRequest) public withdrawRequests;
     mapping(uint256 => ApprovedRequest) public approvedRequestQueue;
     mapping(uint256 => Epoch) public epochs;
-    mapping(address => UserInfo) public users;
+    mapping(address => uint256) public activeDeposits;
     mapping(address => BorrowRequest) public borrowRequests;
     mapping(address => uint256) public collateralDeposits;
     mapping(address => uint256) public unclaimedRewards;
@@ -52,8 +52,6 @@ contract LSRWAExpress {
     uint256 public currentEpochId;
 
     uint256 public repaymentRequiredEpochId;
-
-    uint256 public blocksPerYear;
 
     // --- Structs ---
     struct DepositRequest {
@@ -94,18 +92,10 @@ contract LSRWAExpress {
         bool isWithdraw;
     }
 
-    struct UserInfo {
-        uint256 deposit;
-        uint256 reward;
-        bool autoCompound;
-        uint256 lastHarvestBlock;
-    }
-
 
     // --- Events ---
     event DepositRequested(uint256 requestId, address indexed user, uint256 amount, uint256 timestamp);
     event WithdrawRequested(uint256 requestId, address indexed user, uint256 amount, uint256 timestamp);
-    event WithdrawDebug(string message);
     event DepositApproved(uint256 requestId, address indexed user, uint256 amount);
     event WithdrawApproved(uint256 requestId, address indexed user, uint256 amount);
     event PartialWithdrawalFilled(uint256 requestId, address indexed user, uint256 amount, uint256 timestamp);
@@ -116,7 +106,7 @@ contract LSRWAExpress {
     event BorrowRequested(address indexed originator, uint256 amount);
     event BorrowExecuted(address indexed originator, uint256 seizedAmount);
     event CollateralLiquidated(uint256 seizedAmount);
-    event RewardHarvested(address indexed sender, uint256 amount);
+    event RewardsClaimed(address indexed sender, uint256 amount);
 
     modifier onlyAdmin() {
         require(msg.sender == admin, "Not admin");
@@ -130,14 +120,11 @@ contract LSRWAExpress {
         epochDuration = 40320; // ~1 week in blocks
         maxEpochsBeforeLiquidation = 2;
         currentEpochId = 1;
-        rewardAPR = 500; // 5% APR
-        blocksPerYear = 2_300_000;
     }
 
     function requestDeposit(uint256 amount) external returns (uint256 requestId) {
         require(amount > 0, "Zero amount");
         
-        _forceHarvest(msg.sender);
 
         usdc.safeTransferFrom(            
             msg.sender,
@@ -147,15 +134,12 @@ contract LSRWAExpress {
 
         requestId = ++depositCounter;
         depositRequests[requestId] = DepositRequest(msg.sender, amount, block.timestamp, false);
-
         emit DepositRequested(requestId, msg.sender, amount, block.timestamp);
     }
 
     function requestWithdraw(uint256 amount) external returns (uint256 requestId) {
         require(amount > 0, "Invalid amount");
-        require(users[msg.sender].deposit >= amount, "Insufficient deposit balance");
-
-        _forceHarvest(msg.sender);
+        require(activeDeposits[msg.sender] >= amount, "Insufficient deposit balance");
 
         requestId = ++withdrawCounter;
         withdrawRequests[requestId] = WithdrawRequest(msg.sender, amount, block.timestamp, false, false);
@@ -181,50 +165,25 @@ contract LSRWAExpress {
         require(req.processed, "Not approved yet");
         require(!req.executed, "Already executed");
         require(req.amount > 0, "Invalid amount");
-        // require(users[msg.sender].deposit >= req.amount, "Insufficient balance");
+        require(activeDeposits[msg.sender] >= req.amount, "Insufficient balance");
 
         req.executed = true;
         usdc.safeTransfer(req.user, req.amount);
 
-        if (users[req.user].deposit == 0 && isActiveUser[req.user]) {
+        if (activeDeposits[req.user] == 0 && isActiveUser[req.user]) {
             isActiveUser[req.user] = false;
         }
 
         emit WithdrawExecuted(requestId, req.user, req.amount);
     }
 
-    function compound() external {
-        uint256 reward = users[msg.sender].reward;
-        require(reward > 0, "Nothing to compund");
+    function claimRewards() external {
+        uint256 reward = unclaimedRewards[msg.sender];
+        require(reward > 0, "No rewards");
 
-        users[msg.sender].deposit += reward;
-        users[msg.sender].reward = 0;
-
-        // _forceHarvest(msg.sender, true);
-    }
-
-    function harvestReward() external {
-        uint256 reward = users[msg.sender].reward;
-        require(reward > 0, "Nothing to harvest");
-
-        // users[msg.sender].reward = 0;
-        // usdc.safeTransfer(msg.sender, reward);
-
-        _forceHarvest(msg.sender);
-
-        emit RewardHarvested(msg.sender, reward);
-    }
-
-    function _forceHarvest(address userAddr) internal {
-        // _forceHarvest(userAddr, false);
-        uint256 reward = users[userAddr].reward;
-        // require(reward > 0, "Nothing to harvest");
-        if(reward > 0) {
-            usdc.safeTransfer(userAddr, reward);
-            users[userAddr].reward = 0;
-        }
-
-        // emit RewardHarvested(userAddr, reward);
+        usdc.safeTransfer(msg.sender, reward);
+        unclaimedRewards[msg.sender] = 0;
+        emit RewardsClaimed(msg.sender, reward);
     }
 
     // --- Originator ---
@@ -238,7 +197,7 @@ contract LSRWAExpress {
 
     function requestBorrow(uint256 amount) external {
         BorrowRequest storage pos = borrowRequests[msg.sender];
-        require(!pos.repaid, "Already borrowed");
+        require(pos.amount == 0, "Already borrowed");
         require(collateralDeposits[msg.sender] * 100 / amount >= collateralRatio, 'Insufficient collateral value');
 
         pos.amount = amount;
@@ -255,12 +214,9 @@ contract LSRWAExpress {
 
     function repayBorrow() external {
         BorrowRequest storage pos = borrowRequests[msg.sender];
-        require(pos.amount > 0, "Nothing to repay");
-        require(!pos.repaid, "Repaid already");
-
+        require(pos.amount > 0 && !pos.repaid, "Nothing to repay");
         usdc.safeTransferFrom(msg.sender, address(this), pos.amount);
         borrowingUSDC -= pos.amount;
-        poolUSDC += pos.amount;
         pos.repaid = true;
     }
 
@@ -278,6 +234,8 @@ contract LSRWAExpress {
         uint256 totalActiveDeposits;
         uint256 totalWithdrawals;
 
+        poolUSDC = usdc.balanceOf(address(this));
+
         // Process approved deposit/withdraw
         for (uint256 i = approvedRequestStart; i < approvedRequestEnd; i++) {
             ApprovedRequest memory req = approvedRequestQueue[i];
@@ -285,53 +243,37 @@ contract LSRWAExpress {
             if (req.isWithdraw) {
                 WithdrawRequest storage wReq = withdrawRequests[req.requestId];
                 if(wReq.processed) continue;
-                if(users[req.user].deposit < req.amount) continue;
 
                 if (poolUSDC >= req.amount) {
-                    if(!allowFullWithdraw) continue ;
-                    emit WithdrawDebug("poolUSDC >= req.amount");
-                    users[req.user].deposit -= req.amount;
+                    activeDeposits[req.user] -= req.amount;
                     poolUSDC -= req.amount;
                     totalWithdrawals += req.amount;
                     wReq.processed = true;
                     emit WithdrawApproved(req.requestId, req.user, req.amount);
                 } else {
                     if (poolUSDC > 0) {
-                        if(!allowPartialWithdraw) continue ;
                         // Partial fill
                         uint256 partialAmount = poolUSDC;
-                        if(users[req.user].deposit < poolUSDC) {
-                            emit WithdrawDebug("users[req.user].deposit < poolUSDC");
-                            continue;
-                        }
-                        
-                        users[req.user].deposit -= poolUSDC;
-                        
-                        wReq.processed = true;
-                        wReq.amount = poolUSDC;
-                        emit WithdrawApproved(req.requestId, req.user, partialAmount);
+                        activeDeposits[req.user] -= partialAmount;
+                        poolUSDC = 0;
                         totalWithdrawals += partialAmount;
-                                                
-                        if (partialAmount > req.amount) {
-                            emit WithdrawDebug("partialAmount > req.amount");
-                            continue;
-                        }
+
+                        wReq.processed = true;
+                        wReq.amount = partialAmount;
+
                         uint256 remaining = req.amount - partialAmount;
                         withdrawCounter++;
                         withdrawRequests[withdrawCounter] = WithdrawRequest(
                             req.user, remaining, req.timestamp, false, false
                         );
                         
-                        
+                        emit WithdrawApproved(req.requestId, req.user, partialAmount);
                         emit WithdrawRequested(withdrawCounter, req.user, remaining, req.timestamp);
-
-                        poolUSDC = 0;
                     }
 
                     // repaymentRequiredEpochId = currentEpochId; // enable when needed
                 }
             } else {
-                if(!allowDeposit) continue ;
                 DepositRequest storage dReq = depositRequests[req.requestId];
                 
                 if(dReq.processed) continue;
@@ -340,49 +282,41 @@ contract LSRWAExpress {
                     isActiveUser[req.user] = true;
                     activeUserList.push(req.user);
                 }
-                users[req.user].deposit += req.amount;
+                activeDeposits[req.user] += req.amount;
                 totalActiveDeposits += req.amount;
-                poolUSDC += req.amount;
+                // poolUSDC += req.amount; //no need
                 emit DepositApproved(req.requestId, req.user, req.amount);
             }
+
             delete approvedRequestQueue[i];
         }
-        
+
         // Borrowing
-        for (uint256 i = 0; i < borrowerList.length; i++) {
+        for (uint256 i = 1; i <= borrowerList.length; i++) {
             address borrower = borrowerList[i];
             BorrowRequest storage bReq = borrowRequests[borrower];
             if (!bReq.repaid && bReq.epochStart == 0 && poolUSDC >= bReq.amount) {
-                usdc.safeTransfer(borrower, bReq.amount);
                 poolUSDC -= bReq.amount;
+                usdc.safeTransfer(borrower, bReq.amount);
                 borrowingUSDC += bReq.amount;
                 bReq.epochStart = currentEpochId;
                 emit BorrowExecuted(borrower, bReq.amount);
             }
         }
 
-        uint256 reward;
         // Rewards
-        for (uint256 i = 0; i < activeUserList.length; i++) {
-            address user = activeUserList[i];
-            UserInfo storage u = users[user];
-            if (u.deposit == 0) continue;
+        uint256 duration = currentEpoch.endBlock - currentEpoch.startBlock;
+        uint256 epochReward = (totalActiveDeposits * currentEpoch.aprBps * duration) / (2102400 * 10000); // 2102400 blocks ≈ 365 days at 15s/block
 
-            uint256 blocks = epochDuration;
-            // reward = (u.deposit * rewardAPR * blocks) / (blocksPerYear * BPS_DIVISOR);
-            uint256 intermediate = (u.deposit * rewardAPR) / BPS_DIVISOR;
-            reward = (intermediate * blocks) / blocksPerYear;
-            reward = round(reward);
-
-            if (reward > 0) {
-                if (u.autoCompound) {
-                    u.deposit += reward;
-                    totalActiveDeposits += reward;
-                } else {
-                    u.reward += reward;
+        if (epochReward > 0 && totalActiveDeposits > 0) {
+            for (uint256 i = 0; i < activeUserList.length; i++) {
+                address user = activeUserList[i];
+                if (!isActiveUser[user]) continue;
+                uint256 userDeposit = activeDeposits[user];
+                if (userDeposit > 0) {
+                    uint256 reward = (userDeposit * epochReward) / totalActiveDeposits;
+                    unclaimedRewards[user] += reward;
                 }
-                poolUSDC -= reward;
-                u.lastHarvestBlock = block.number;
             }
         }
 
@@ -391,26 +325,19 @@ contract LSRWAExpress {
             endBlock: (currentEpochId == 1 || block.number < currentEpoch.endBlock) ? block.number + epochDuration : currentEpoch.endBlock + 1 + epochDuration,
             totalDeposits: totalActiveDeposits,
             totalWithdrawals: totalWithdrawals,
-            rewardsDistributed: reward,
+            rewardsDistributed: epochReward,
             aprBps: rewardAPR
         });
-
-        epochs[currentEpochId] = currentEpoch;
 
         emit EpochProcessed(currentEpochId, totalActiveDeposits, totalWithdrawals);
 
         // Move pointer forward
         approvedRequestStart = approvedRequestEnd;
         currentEpochId++;
-        
     }
 
     function setRewardAPR(uint256 aprBps) external onlyAdmin {
         rewardAPR = aprBps;
-    }
-
-    function setAutoCompound(bool status) external {
-        users[msg.sender].autoCompound = status;
     }
 
     function setEpochDuration(uint256 blocks) external onlyAdmin {
@@ -425,20 +352,16 @@ contract LSRWAExpress {
         collateralRatio = ratio;
     }
 
-    function toupUSDC(uint256 amount) external onlyAdmin {
-        poolUSDC += amount;
-    }
-
     function repaymentRequired() external onlyAdmin {
         repaymentRequiredEpochId = currentEpochId;
     }
 
     function liquidateCollateral(address outAddress) external onlyAdmin {
         uint256 liquidateLSRWA;
-        for (uint256 i = 0; i < borrowerList.length; i++) {
+        for (uint256 i = 1; i <= borrowerList.length; i++) {
             address borrower = borrowerList[i];
             BorrowRequest storage pos = borrowRequests[borrower];
-            if(pos.repaid) continue;
+            require(!pos.repaid, "Not eligible");
 
             uint256 seized = collateralDeposits[borrower];
             pos.repaid = true;
@@ -453,9 +376,4 @@ contract LSRWAExpress {
 
         emit CollateralLiquidated(liquidateLSRWA);
     }
-
-    function round(uint256 amount) internal pure returns (uint256) {
-        return (amount / 1e12) * 1e12;
-    }
-
 }

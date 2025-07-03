@@ -50,10 +50,11 @@ export default function ProcessRequests() {
         <div className="p-6 space-y-6">
             <div className="flex gap-4 items-center">
                 <select value={status} onChange={(e) => setStatus(e.target.value)} className="p-2 border rounded">
+                    <option value="">All Status</option>
                     <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
                     <option value="completed">Completed</option>
                     <option value="executed">Executed</option>
-                    <option value="">All Status</option>
                 </select>
                 <select value={type} onChange={(e) => setType(e.target.value)} className="p-2 border rounded">
                     <option value="">All Types</option>

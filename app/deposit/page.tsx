@@ -2,7 +2,7 @@
 
 import clsx from "clsx";
 import { useRouter } from 'next/navigation';
-import DepositForm from '../components/depositor/DepositForm';
+import DepositForm from '../components/DepositForm';
 
 export default function Deposit() {
 
