@@ -369,7 +369,7 @@ contract LSRWAExpress {
         emit CollateralLiquidated(liquidateLSRWA);
     }
 
-    function getRequests(bool processed, uint page, uint limit, address owner, bool isAdmin)
+    function getRequests(uint kind, bool processed, uint page, uint limit, address owner, bool isAdmin)
         external
         view
         returns (Request[] memory)
@@ -399,6 +399,8 @@ contract LSRWAExpress {
                 if(isAdmin && processed != req.processed || (!isAdmin && owner != req.user)) {
                     continue;
                 }
+                if(kind == 1 && req.isWithdraw) continue ;
+                if(kind == 2 && !req.isWithdraw) continue ;
                 trequests[j] = req;
                 j++;
             }
