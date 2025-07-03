@@ -569,26 +569,6 @@
 				"internalType": "address[]",
 				"name": "borrowers",
 				"type": "address[]"
-			},
-			{
-				"internalType": "bool",
-				"name": "repaid",
-				"type": "bool"
-			},
-			{
-				"internalType": "bool",
-				"name": "pagination",
-				"type": "bool"
-			},
-			{
-				"internalType": "uint256",
-				"name": "start",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "limit",
-				"type": "uint256"
 			}
 		],
 		"name": "getBorrowRequests",
@@ -627,13 +607,8 @@
 				"type": "bool"
 			},
 			{
-				"internalType": "bool",
-				"name": "pagination",
-				"type": "bool"
-			},
-			{
 				"internalType": "uint256",
-				"name": "start",
+				"name": "page",
 				"type": "uint256"
 			},
 			{
@@ -690,6 +665,25 @@
 				"internalType": "struct LSRWAExpress.Request[]",
 				"name": "",
 				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address[]",
+				"name": "borrowers",
+				"type": "address[]"
+			}
+		],
+		"name": "getUnpaidBorrowerList",
+		"outputs": [
+			{
+				"internalType": "address[]",
+				"name": "",
+				"type": "address[]"
 			}
 		],
 		"stateMutability": "view",

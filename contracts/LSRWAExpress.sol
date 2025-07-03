@@ -389,12 +389,14 @@ contract LSRWAExpress {
             }
         }
         else {
-            uint i = requestCounter - ((page-1)*limit) - 1;
-            while (j < limit && i >= 0) 
-            {
-                Request storage req = requests[i];
-                i--;
-                if(processed != req.processed || (!isAdmin && owner != req.user)) {
+            // pagination
+            page = page - 1;
+            uint end = requestCounter > page * limit ? requestCounter - (page * limit) : 0;
+            uint start = end >= limit ? end - limit : 0;
+
+            for (uint i = end; i > start; i--) {
+                Request storage req = requests[i-1];
+                if(isAdmin && processed != req.processed || (!isAdmin && owner != req.user)) {
                     continue;
                 }
                 trequests[j] = req;
@@ -405,37 +407,35 @@ contract LSRWAExpress {
         return trequests;
     }
 
-    function getBorrowRequests(address[] calldata borrowers, bool repaid, uint page, uint limit)
+    function getBorrowRequests(address[] calldata borrowers) onlyAdmin
         external
         view
         returns (BorrowRequest[] memory)
     {
         BorrowRequest[] memory borrows = new BorrowRequest[](borrowers.length);
-
-        uint j = 0;
-        
-        if(page == 0) {
-            for (uint i = 0; i < borrowers.length; i++) {
-                BorrowRequest storage req = borrowRequests[borrowers[i]];
-                if(repaid == req.repaid) {
-                    borrows[j] = req;
-                    j++;
-                }
-            }
-        }
-        else {
-            uint i = borrowers.length - ((page-1)*limit) - 1;
-            while (j < limit && i >= 0) 
-            {
-                BorrowRequest storage req = borrowRequests[borrowers[i]];
-                if(repaid == req.repaid) {
-                    borrows[j] = req;
-                    j++;
-                }
-                i--;
-            }
+        for (uint i = 0; i < borrowers.length; i++) {
+            BorrowRequest storage req = borrowRequests[borrowers[i]];
+            borrows[i] = req;
         }
 
         return borrows;
+    }
+
+    function getUnpaidBorrowerList(address[] calldata borrowers) onlyAdmin
+        external
+        view
+        returns (address[] memory)
+    {
+        uint j = 0;
+        address[] memory filters = new address[](borrowers.length);
+        for (uint i = 0; i < borrowers.length; i++) {
+            BorrowRequest storage req = borrowRequests[borrowers[i]];
+            if(!req.repaid) {
+                filters[j] = borrowers[i];
+                j++;
+            }
+        }
+
+        return filters;
     }
 }
