@@ -25,7 +25,8 @@ contract LSRWAExpress {
     uint256 public collateralRatio;
 
     // --- Mappings ---
-    mapping(uint256 => Request) public requests;
+    mapping(uint256 => DepositRequest) public depositRequests;
+    mapping(uint256 => WithdrawRequest) public withdrawRequests;
     mapping(address => UserInfo) public users;
     mapping(address => BorrowRequest) public borrowRequests;
     mapping(address => uint256) public collateralDeposits;
@@ -33,7 +34,8 @@ contract LSRWAExpress {
     uint256 public borrowingUSDC;
     uint256 public poolLSRWA;
 
-    uint256 public requestCounter;
+    uint256 public depositCounter;
+    uint256 public withdrawCounter;
     uint256 public epochCounter;
     uint256 public currentEpochId= 1;
     uint256 public repaymentRequiredEpochId;
@@ -41,12 +43,17 @@ contract LSRWAExpress {
     Epoch public currentEpoch;
 
     // --- Structs ---
-
-    struct Request {
+    struct DepositRequest {
         address user;
         uint256 amount;
         uint256 timestamp;
-        bool isWithdraw;
+        bool processed;
+    }
+
+    struct WithdrawRequest {
+        address user;
+        uint256 amount;
+        uint256 timestamp;
         bool processed;
         bool executed;
     }
@@ -119,8 +126,8 @@ contract LSRWAExpress {
             amount // uint256 _value
         );
 
-        requestId = ++requestCounter;
-        requests[requestId] = Request(msg.sender, amount, block.timestamp, false, false, false);
+        requestId = ++depositCounter;
+        depositRequests[requestId] = DepositRequest(msg.sender, amount, block.timestamp, false);
 
         emit DepositRequested(requestId, msg.sender, amount, block.timestamp);
     }
@@ -131,31 +138,28 @@ contract LSRWAExpress {
 
         _forceHarvest(msg.sender);
 
-        requestId = ++requestCounter;
-        requests[requestId] = Request(msg.sender, amount, block.timestamp, true, false, false);
+        requestId = ++withdrawCounter;
+        withdrawRequests[requestId] = WithdrawRequest(msg.sender, amount, block.timestamp, false, false);
         emit WithdrawRequested(requestId, msg.sender, amount, block.timestamp);
     }
 
     function cancelDepositRequest(uint256 requestId) external {
-        Request storage req = requests[requestId];
-        require(!req.isWithdraw, "Not deposit");
+        DepositRequest storage req = depositRequests[requestId];
         require(!req.processed, "Already processed");
-        require(!req.executed, "Already cancelled");
         require(req.user == msg.sender, "Not request owner");
 
         usdc.safeTransfer(req.user, req.amount);
         req.processed = true;
-        req.executed = true;
+        req.amount = 0;
         
         emit DepositCancelled(requestId, req.user);
     }
 
     // executeWithdraw for deposit cancel after approval
    function executeWithdraw(uint256 requestId) external {
-        Request storage req = requests[requestId];
+        WithdrawRequest storage req = withdrawRequests[requestId];
         
         require(req.user == msg.sender, "Not authorized");
-        require(req.isWithdraw, "Not withdraw");
         require(req.processed, "Not approved yet");
         require(!req.executed, "Already executed");
         require(req.amount > 0, "Invalid amount");
@@ -227,18 +231,18 @@ contract LSRWAExpress {
 
     // --- Admin ---
 
-    function processRequests(ApprovedRequest[] calldata arequests, address[] calldata unpaidBorrowerList, address[] calldata activeUserList) external onlyAdmin {
+    function processRequests(ApprovedRequest[] calldata requests, address[] calldata unpaidBorrowerList, address[] calldata activeUserList) external onlyAdmin {
         // require(block.number > currentEpoch.endBlock, "Epoch not ended");
 
         uint256 totalActiveDeposits;
         uint256 totalWithdrawals;
 
         // Process approved deposit/withdraw
-        for (uint256 i = 0; i < arequests.length; i++) {
-            ApprovedRequest memory req = arequests[i];
+        for (uint256 i = 0; i < requests.length; i++) {
+            ApprovedRequest memory req = requests[i];
 
             if (req.isWithdraw) {
-                Request storage wReq = requests[req.requestId];
+                WithdrawRequest storage wReq = withdrawRequests[req.requestId];
                 // if(wReq.processed) continue;
                 if(users[req.user].deposit < req.amount) continue;
                 
@@ -246,11 +250,11 @@ contract LSRWAExpress {
                     
                     uint256 remaining = wReq.amount - req.amount;
                     wReq.amount = req.amount;
-                    requestCounter++;
-                    requests[requestCounter] = Request(
-                        req.user, remaining, req.timestamp, true, false, false
+                    withdrawCounter++;
+                    withdrawRequests[withdrawCounter] = WithdrawRequest(
+                        req.user, remaining, req.timestamp, false, false
                     );
-                    emit WithdrawRequested(requestCounter, req.user, remaining, req.timestamp);
+                    emit WithdrawRequested(withdrawCounter, req.user, remaining, req.timestamp);
                 }
                 
                 users[req.user].deposit -= req.amount;
@@ -264,9 +268,9 @@ contract LSRWAExpress {
                     // repaymentRequiredEpochId = currentEpochId; // enable when needed
                 
             } else {
-                // Request storage dReq = requests[req.requestId];
+                DepositRequest storage dReq = depositRequests[req.requestId];
                 
-                // if(dReq.processed) continue;
+                if(dReq.processed) continue;
 
                 users[req.user].deposit += req.amount;
                 totalActiveDeposits += req.amount;
@@ -369,12 +373,12 @@ contract LSRWAExpress {
         emit CollateralLiquidated(liquidateLSRWA);
     }
 
-    function getRequests(bool processed, bool pagination, uint start, uint limit, address owner, bool isAdmin)
+    function getDepositRequests(bool processed, bool pagination, uint start, uint limit) onlyAdmin
         external
         view
-        returns (Request[] memory)
+        returns (DepositRequest[] memory)
     {
-        Request[] memory trequests = new Request[](requestCounter);
+        DepositRequest[] memory deposits = new DepositRequest[](depositCounter);
 
         uint j = 0;
         
@@ -382,30 +386,62 @@ contract LSRWAExpress {
             uint i = start;
             while (j < limit) 
             {
-                Request storage req = requests[i];
-                if(processed != req.processed || (!req.isWithdraw && req.executed) || (!isAdmin && owner != req.user)) {
-                    i++;
-                    continue;
+                DepositRequest storage req = depositRequests[i];
+                if(processed == req.processed && req.amount != 0) {
+                    deposits[j] = req;
+                    j++;
                 }
-                trequests[j] = req;
-                j++;
+                i++;
             }
         }
         else {
-            for (uint i = 0; i < requestCounter; i++) {
-                Request storage req = requests[i];
-                if(processed != req.processed || (!req.isWithdraw && req.executed) || (!isAdmin && owner != req.user)) {
-                    continue;
+            for (uint i = 0; i < depositCounter; i++) {
+                DepositRequest storage req = depositRequests[i];
+                if(processed == req.processed && req.amount != 0) {
+                    deposits[j] = req;
+                    j++;
                 }
-                trequests[j] = req;
-                j++;
             }
         }
 
-        return trequests;
+        return deposits;
     }
 
-    function getBorrowRequests(address[] calldata borrowers, bool repaid, bool pagination, uint256 start, uint256 limit)
+    function getwithdrawRequests(bool processed, bool pagination, uint start, uint limit) onlyAdmin
+        external
+        view
+        returns (WithdrawRequest[] memory)
+    {
+        WithdrawRequest[] memory withdraws = new WithdrawRequest[](withdrawCounter);
+
+        uint j = 0;
+        
+        if(pagination) {
+            uint i = start;
+            while (j < limit) 
+            {
+                WithdrawRequest storage req = withdrawRequests[i];
+                if(processed == req.processed && req.amount != 0) {
+                    withdraws[j] = req;
+                    j++;
+                }
+                i++;
+            }
+        }
+        else {
+            for (uint i = 0; i < withdrawCounter; i++) {
+                WithdrawRequest storage req = withdrawRequests[i];
+                if(processed == req.processed && req.amount != 0) {
+                    withdraws[j] = req;
+                    j++;
+                }
+            }
+        }
+
+        return withdraws;
+    }
+
+    function getBorrowRequests(address[] calldata borrowers, bool repaid, bool pagination, uint256 start, uint256 limit) onlyAdmin
         external
         view
         returns (BorrowRequest[] memory)
@@ -419,7 +455,7 @@ contract LSRWAExpress {
             while (j < limit) 
             {
                 BorrowRequest storage req = borrowRequests[borrowers[i]];
-                if(repaid == req.repaid) {
+                if(repaid == req.repaid && req.amount != 0) {
                     borrows[j] = req;
                     j++;
                 }
@@ -429,7 +465,7 @@ contract LSRWAExpress {
         else {
             for (uint i = 0; i < borrowers.length; i++) {
                 BorrowRequest storage req = borrowRequests[borrowers[i]];
-                if(repaid == req.repaid) {
+                if(repaid == req.repaid && req.amount != 0) {
                     borrows[j] = req;
                     j++;
                 }
