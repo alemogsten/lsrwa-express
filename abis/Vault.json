@@ -567,6 +567,25 @@
 		"inputs": [
 			{
 				"internalType": "address[]",
+				"name": "tusers",
+				"type": "address[]"
+			}
+		],
+		"name": "getActiveUserList",
+		"outputs": [
+			{
+				"internalType": "address[]",
+				"name": "filters",
+				"type": "address[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address[]",
 				"name": "borrowers",
 				"type": "address[]"
 			}
@@ -691,13 +710,40 @@
 				"internalType": "address[]",
 				"name": "borrowers",
 				"type": "address[]"
+			},
+			{
+				"internalType": "bool",
+				"name": "pending",
+				"type": "bool"
 			}
 		],
-		"name": "getUnpaidBorrowerList",
+		"name": "getUnpaidBorrowList",
 		"outputs": [
 			{
-				"internalType": "address[]",
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "amount",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "epochStart",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "repaid",
+						"type": "bool"
+					}
+				],
+				"internalType": "struct LSRWAExpress.BorrowRequest[]",
 				"name": "filters",
+				"type": "tuple[]"
+			},
+			{
+				"internalType": "address[]",
+				"name": "filters1",
 				"type": "address[]"
 			}
 		],

@@ -206,6 +206,7 @@ contract LSRWAExpress {
     function requestBorrow(uint256 amount) external {
         BorrowRequest storage pos = borrowRequests[msg.sender];
         require(!pos.repaid, "Already borrowed");
+        require(collateralDeposits[msg.sender] > 0, "No cllateral deposits");
         require(collateralDeposits[msg.sender] * 100 / amount >= collateralRatio, 'Insufficient collateral value');
 
         pos.amount = amount;
@@ -246,10 +247,10 @@ contract LSRWAExpress {
                     
                     uint256 remaining = wReq.amount - req.amount;
                     wReq.amount = req.amount;
-                    requestCounter++;
                     requests[requestCounter] = Request(
                         req.user, remaining, req.timestamp, true, false, false
                     );
+                    requestCounter++;
                     emit WithdrawRequested(requestCounter, req.user, remaining, req.timestamp);
                 }
                 
@@ -264,12 +265,13 @@ contract LSRWAExpress {
                     // repaymentRequiredEpochId = currentEpochId; // enable when needed
                 
             } else {
-                // Request storage dReq = requests[req.requestId];
+                Request storage dReq = requests[req.requestId];
                 
                 // if(dReq.processed) continue;
 
                 users[req.user].deposit += req.amount;
                 totalActiveDeposits += req.amount;
+                dReq.processed = true;
                 
                 emit DepositApproved(req.requestId, req.user, req.amount);
             }
@@ -353,9 +355,12 @@ contract LSRWAExpress {
             address borrower = unpaidBorrowerList[i];
             BorrowRequest storage pos = borrowRequests[borrower];
 
+            if(pos.repaid) continue;
+
             uint256 seized = collateralDeposits[borrower];
             pos.repaid = true;
             liquidateLSRWA += seized;
+            collateralDeposits[borrower] = 0;
             
             // borrowingUSDC -= pos.amount;
         }
@@ -400,6 +405,7 @@ contract LSRWAExpress {
                 if(kind == 1 && req.isWithdraw) continue ;
                 if(kind == 2 && !req.isWithdraw) continue ;
                 temp[counter] = req;
+                tempIds[counter] = i;
                 counter++;
             }
         }
@@ -409,6 +415,7 @@ contract LSRWAExpress {
             for (uint i = 0; i < counter; i++) {
                 Request memory req = temp[i];
                 trequests[j] = req;
+                ids[j] = tempIds[i];
                 j++;
             }
         }
@@ -445,17 +452,43 @@ contract LSRWAExpress {
         return borrows;
     }
 
-    function getUnpaidBorrowerList(address[] calldata borrowers) onlyAdmin
+    function getUnpaidBorrowList(address[] calldata borrowers, bool pending) onlyAdmin
+        external
+        view
+        returns (BorrowRequest[] memory filters, address[] memory filters1)
+    {
+        uint j = 0;
+        BorrowRequest[] memory temp = new BorrowRequest[](borrowers.length);
+        address[] memory temp1 = new address[](borrowers.length);
+        for (uint i = 0; i < borrowers.length; i++) {
+            BorrowRequest storage req = borrowRequests[borrowers[i]];
+            if(pending && !req.repaid && req.epochStart == 0 || !pending && !req.repaid && req.epochStart != 0) {
+                temp[j] = req;
+                temp1[j] = borrowers[i];
+                j++;
+            }
+        }
+        filters = new BorrowRequest[](j);
+        filters1 = new address[](j);
+        for (uint i = 0; i < j; i++) {
+            filters[i] = temp[i];
+            filters1[i] = temp1[i];
+        }
+
+        return (filters, filters1);
+    }
+
+    function getActiveUserList(address[] calldata tusers) onlyAdmin
         external
         view
         returns (address[] memory filters)
     {
         uint j = 0;
-        address[] memory temp = new address[](borrowers.length);
-        for (uint i = 0; i < borrowers.length; i++) {
-            BorrowRequest storage req = borrowRequests[borrowers[i]];
-            if(!req.repaid) {
-                temp[j] = borrowers[i];
+        address[] memory temp = new address[](tusers.length);
+        for (uint i = 0; i < tusers.length; i++) {
+            UserInfo storage user = users[tusers[i]];
+            if(user.deposit > 0) {
+                temp[j] = tusers[i];
                 j++;
             }
         }
