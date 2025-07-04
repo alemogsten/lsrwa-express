@@ -3,8 +3,10 @@
 import { useReadContracts } from 'wagmi';
 import { formatUnits } from "ethers";
 import vaultAbi from '@/abis/Vault.json';
+import usdcAbi from "@/abis/ERC20.json"
 
 const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
+const USDC_ADDRESS = process.env.NEXT_PUBLIC_USDC_ADDRESS;
 const USDC_DECIMAL = parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS || '6');
 
 export function useAdminSummary() {
@@ -12,10 +14,16 @@ export function useAdminSummary() {
   const { data, isLoading, refetch, error } = useReadContracts({
     contracts: [
       {
-        address: VAULT_ADDRESS,
-        abi: vaultAbi,
-        functionName: 'poolUSDC',
+        address: USDC_ADDRESS,
+        abi: usdcAbi,
+        functionName: 'balanceOf',
+        args: [VAULT_ADDRESS],
       },
+      // {
+      //   address: VAULT_ADDRESS,
+      //   abi: vaultAbi,
+      //   functionName: 'poolUSDC',
+      // },
       {
         abi: vaultAbi,
         address: VAULT_ADDRESS,

@@ -10,7 +10,7 @@ export default function PendingWithdrawalCard() {
     const fetchRequests = async () => {
         const params = new URLSearchParams({
             status: 'pending',
-            type: 'withdraw',
+            type: 2,
         });
 
         const res = await fetch(`/api/admin/requests?${params}`);

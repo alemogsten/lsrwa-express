@@ -1,6 +1,7 @@
 'use client';
 
 import ProcessRequests from '../components/admin/ProcessRequests';
+import Borrows from '../components/admin/Borrows';
 import ProcessEpoch from '../components/admin/ProcessEpoch';
 import EpochDurationManager from '../components/admin/EpochDurationManager';
 import RewardAPRManager from '../components/admin/RewardAprManager';
@@ -23,12 +24,12 @@ export default function AdminDashboard() {
                 <LiquidityTokenCard />
             </div>
             <ProcessRequests />
+            <Borrows />
             <div className='grid grid-cols-2 gap-4'>
                 <RewardAPRManager />
                 <MaxEpochSetting />
                 <CollateralRatioSetting />
                 <EpochDurationManager />
-                <TopupUSDC />
             </div>
             <div className='mt-10'>
                 <ProcessEpoch />

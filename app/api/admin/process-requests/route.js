@@ -1,49 +1,99 @@
 // app/api/admin/process-requests/route.js
 import { NextResponse } from "next/server";
-import { ethers, parseUnits } from "ethers";
+import { ethers, parseUnits, formatUnits } from "ethers";
 import vaultAbi from "@/abis/Vault.json";
-import clientPromise from '@/lib/mongo';
+import usdcAbi from "@/abis/ERC20.json";
 
 export async function POST() {
   try {
-    const client = await clientPromise;
-    const db = client.db(process.env.MONGO_DB);
-    const collection = db.collection('requests');
-
-    const query = {processed: false, approved: false};
-    const data = await db
-      .collection('requests')
-      .find(query)
-      .sort({ timestamp: -1 })
-      .toArray();
 
     const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_SEPOLIA_RPC);
     const signer = new ethers.Wallet(process.env.ADMIN_PRIVATE_KEY, provider);
     const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
 
-    const approvedRequests = data.map((r) => ({
-      user: r.user,
-      requestId: r.requestId,
-      amount: parseUnits(r.amount.toString(), parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS)),
-      timestamp: r.timestamp,
-      isWithdraw: r.isWithdraw,
+    const usdc = new ethers.Contract(process.env.NEXT_PUBLIC_USDC_ADDRESS, usdcAbi, provider);
+    const poolUSDC = await usdc.balanceOf(process.env.NEXT_PUBLIC_VAULT_ADDRESS);
+
+    let liquidityRemaining = poolUSDC;
+
+    // uint kind[all, deposit, withdraw], bool processed, uint page, uint limit, address owner, bool isAdmin
+    const [data, ids, total] = await vault.getRequests(0, false, 0, 0, process.env.NEXT_PUBLIC_VAULT_ADDRESS, true);
+    console.log('data', data);
+    let requests = [];
+    let approvedRequests = [];
+
+    requests = data.map((item, index) => ({
+      user: item[0], 
+      requestId: parseInt(ids[index]),
+      amount: formatUnits(item[1], parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS)),
+      timestamp: item[2],
+      isWithdraw: item[3],
     }));
 
-    if(approvedRequests.length > 0) {
-      const tx = await vault.processRequests(approvedRequests);
-      await tx.wait();
-  
-      for (const element of approvedRequests) {
-        await collection.updateOne(
-          { requestId: Number(element.requestId), timestamp: element.timestamp },
-          { $set: { approved: true } }
-        );
-      }
-  
-      return NextResponse.json({ success: true });
-    } else {
-      return NextResponse.json({ success: false, error: "No pending requests" });
+    let withdrawRequests = requests.filter(item => item.isWithdraw);
+
+    for (const item of withdrawRequests) {
+      const { requestId, user, amount, timestamp } = item;
+      const approvedAmount = liquidityRemaining >= amount ? amount : liquidityRemaining;
+      liquidityRemaining -= approvedAmount;
+
+      approvedRequests.push({
+        user,
+        requestId,
+        // amount: parseUnits(approvedAmount.toString(), parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS)),
+        amount: approvedAmount,
+        timestamp,
+        isWithdraw: true,
+      });
+
+      if (liquidityRemaining === 0n) break;
     }
+
+    let depositRequests = requests.filter(item => !item.isWithdraw);
+
+    for (const item of depositRequests) {
+      const { requestId, user, amount, timestamp } = item;
+      approvedRequests.push({
+        user,
+        requestId,
+        amount: parseUnits(amount.toString(), parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS)),
+        timestamp,
+        isWithdraw: false,
+      });
+    }
+
+    let borrowers = [];
+    const borrowEvents = await vault.queryFilter("BorrowRequested", 0, "latest");
+    
+    for (const event of borrowEvents) {
+      const { originator, amount } = event.args;
+      borrowers.push(originator);
+    }
+    const pending = true;
+    const [borrowList, borrowerList] = await vault.getUnpaidBorrowList(borrowers, pending);
+    let unpaidBorrowers = [];
+    for (let i = 0; i < borrowList.length; i++) {
+      const item = borrowList[i];
+      if(liquidityRemaining > item.amount) {
+        liquidityRemaining -= item.amount;
+        unpaidBorrowers.push(borrowerList[i]);
+      }
+    }
+    console.log('unpaidBorrowers', unpaidBorrowers);
+
+    let users = [];
+    const depsoitEvents = await vault.queryFilter("DepositApproved", 0, "latest");
+    
+    for (const event of depsoitEvents) {
+      const { requestId, user, amount } = event.args;
+      users.push(user);
+    }
+    const activeUsers = await vault.getActiveUserList(users);
+    console.log('activeUsers', [...activeUsers]);
+    const tx = await vault.processRequests(approvedRequests, unpaidBorrowers, [...activeUsers]);
+    await tx.wait();
+  
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: error.message }, { status: 500 });

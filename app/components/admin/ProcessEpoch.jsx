@@ -31,7 +31,7 @@ export default function ProcessEpoch() {
                 <button
                     onClick={handleProcessEpoch}
                     disabled={processingEpoch}
-                    className={`px-4 py-2 flex items-center gap-2 rounded text-white ${
+                    className={`hidden px-4 py-2 flex items-center gap-2 rounded text-white ${
                         processingEpoch ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
                     }`}
                 >

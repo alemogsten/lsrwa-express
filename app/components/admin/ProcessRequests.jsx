@@ -5,8 +5,8 @@ import axios from 'axios';
 
 export default function ProcessRequests() {
     const [requests, setRequests] = useState([]);
-    const [status, setStatus] = useState('');
-    const [type, setType] = useState('');
+    const [status, setStatus] = useState('pending');
+    const [type, setType] = useState(0);
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const limit = 10;
@@ -39,7 +39,7 @@ export default function ProcessRequests() {
         setRequests(json.data);
         setTotal(json.total);
     };
-    
+
     useEffect(() => {
         fetchRequests();
     }, [status, type, page]);
@@ -50,20 +50,17 @@ export default function ProcessRequests() {
         <div className="p-6 space-y-6">
             <div className="flex gap-4 items-center">
                 <select value={status} onChange={(e) => setStatus(e.target.value)} className="p-2 border rounded">
-                    <option value="">All Status</option>
                     <option value="pending">Pending</option>
-                    <option value="approved">Approved</option>
                     <option value="completed">Completed</option>
-                    <option value="executed">Executed</option>
                 </select>
                 <select value={type} onChange={(e) => setType(e.target.value)} className="p-2 border rounded">
-                    <option value="">All Types</option>
-                    <option value="deposit">Deposit</option>
-                    <option value="withdraw">Withdraw</option>
+                    <option value="0">All Types</option>
+                    <option value="1">Deposit</option>
+                    <option value="2">Withdraw</option>
                 </select>
                 <button
                     onClick={handleProcessRequests}
-                    disabled={processingRequests || total === 0}
+                    disabled={processingRequests}
                     className={`px-4 py-2 flex items-center gap-2 rounded text-white ${
                         processingRequests ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700 disabled:opacity-50' 
                     }`}
@@ -86,7 +83,7 @@ export default function ProcessRequests() {
                     </thead>
                     <tbody>
                         {requests.map((req) => (
-                            <tr key={req._id} className="border-t hover:bg-gray-50">
+                            <tr key={req.requestId} className="border-t hover:bg-gray-50">
                                 <td className="px-4 py-2">{req.requestId}</td>
                                 <td className="px-4 py-2">{req.user}</td>
                                 <td className="px-4 py-2 capitalize">{req.isWithdraw ? 'Withdraw' : 'Deposit'}</td>
