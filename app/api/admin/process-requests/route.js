@@ -15,7 +15,6 @@ export async function POST() {
     const poolUSDC = await usdc.balanceOf(process.env.NEXT_PUBLIC_VAULT_ADDRESS);
 
     let liquidityRemaining = poolUSDC;
-
     // uint kind[all, deposit, withdraw], bool processed, uint page, uint limit, address owner, bool isAdmin
     const [data, ids, total] = await vault.getRequests(0, false, 0, 0, process.env.NEXT_PUBLIC_VAULT_ADDRESS, true);
     console.log('data', data);
@@ -34,7 +33,8 @@ export async function POST() {
 
     for (const item of withdrawRequests) {
       const { requestId, user, amount, timestamp } = item;
-      const approvedAmount = liquidityRemaining >= amount ? amount : liquidityRemaining;
+      let parsedAmount = parseUnits(amount.toString(), parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS));
+      const approvedAmount = liquidityRemaining >= parsedAmount ? parsedAmount : liquidityRemaining;
       liquidityRemaining -= approvedAmount;
 
       approvedRequests.push({
@@ -48,7 +48,6 @@ export async function POST() {
 
       if (liquidityRemaining === 0n) break;
     }
-
     let depositRequests = requests.filter(item => !item.isWithdraw);
 
     for (const item of depositRequests) {
@@ -69,13 +68,15 @@ export async function POST() {
       const { originator, amount } = event.args;
       borrowers.push(originator);
     }
+    
     const pending = true;
     const [borrowList, borrowerList] = await vault.getUnpaidBorrowList(borrowers, pending);
     let unpaidBorrowers = [];
     for (let i = 0; i < borrowList.length; i++) {
-      const item = borrowList[i];
-      if(liquidityRemaining > item.amount) {
-        liquidityRemaining -= item.amount;
+      const [amount, epochStart, repaid] = borrowList[i];
+      
+      if(liquidityRemaining > amount) {
+        liquidityRemaining -= amount;
         unpaidBorrowers.push(borrowerList[i]);
       }
     }
@@ -86,7 +87,9 @@ export async function POST() {
     
     for (const event of depsoitEvents) {
       const { requestId, user, amount } = event.args;
-      users.push(user);
+      if (!users.includes(user)) {
+        users.push(user);
+      }
     }
     const activeUsers = await vault.getActiveUserList(users);
     console.log('activeUsers', [...activeUsers]);
