@@ -66,7 +66,9 @@ export async function POST() {
     
     for (const event of borrowEvents) {
       const { originator, amount } = event.args;
-      borrowers.push(originator);
+      if (!borrowers.includes(originator)) {
+        borrowers.push(originator);
+      }
     }
     
     const pending = true;

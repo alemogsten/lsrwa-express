@@ -19,7 +19,9 @@ export async function GET(request) {
       
       for (const event of borrowEvents) {
         const { originator, amount } = event.args;
-        borrowers.push(originator);
+        if (!borrowers.includes(originator)) {
+          borrowers.push(originator);
+        }
       }
   
       const data = await vault.getBorrowRequests(borrowers);
