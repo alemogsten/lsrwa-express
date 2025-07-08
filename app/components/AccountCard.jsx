@@ -52,7 +52,7 @@ export default function AccountCard() {
         </div>
         <div className='text-center'>
           <p className='text-base font-medium leading-[22px]'>Available Yield</p>
-          <p className='text-[24px] font-bold leading-[30px]'>$ {isLoading ? 0 :formatNumber(deposited + reward)}</p>
+          <p className='text-[24px] font-bold leading-[30px]'>$ {isLoading ? 0 :formatNumber(reward)}</p>
           <p className='text-[14px] text-gray font-medium leading-[22px]'>Total earnings To date</p>
           {reward > 0 &&
           <div className="flex gap-2">

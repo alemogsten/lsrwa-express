@@ -26,6 +26,12 @@ export function useDepositorAccount() {
       {
         address: VAULT_ADDRESS,
         abi: vaultAbi,
+        functionName: 'calculateHarvest',
+        args: [address],
+      },
+      {
+        address: VAULT_ADDRESS,
+        abi: vaultAbi,
         functionName: 'rewardAPR',
       },
     ],
@@ -70,7 +76,7 @@ export function useDepositorAccount() {
       await writeContractAsync({
         address: VAULT_ADDRESS,
         abi: vaultAbi,
-        functionName: 'harvestReward',
+        functionName: 'harvest',
       });
       await refetch();
     } catch (err) {
@@ -81,9 +87,9 @@ export function useDepositorAccount() {
   }
 
   const deposited = formatNumber(formatUnits(data?.[0][0] ?? 0n, decimals)) ;
-  const reward = formatNumber(formatUnits(data?.[0][1] ?? 0n, decimals)) ;
-  const autoCompound = data?.[0][2] ?? false ;
-  const rewardAPR = Number(data?.[1] ?? 0n) * 0.01 ;
+  const autoCompound = data?.[0][1] ?? false ;
+  const reward = formatNumber(formatUnits(data?.[1] ?? 0n, decimals)) ;
+  const rewardAPR = Number(data?.[2] ?? 0n) * 0.01 ;
 
   return {
     deposited,

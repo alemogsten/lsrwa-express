@@ -56,7 +56,7 @@ contract LSRWAExpress {
         uint256 endBlock;
         uint256 totalDeposits;
         uint256 totalWithdrawals;
-        uint256 rewardsDistributed;
+        // uint256 rewardsDistributed;
         uint256 aprBps;
     }
 
@@ -76,7 +76,6 @@ contract LSRWAExpress {
 
     struct UserInfo {
         uint256 deposit;
-        uint256 reward;
         bool autoCompound;
         uint256 lastHarvestBlock;
     }
@@ -167,32 +166,40 @@ contract LSRWAExpress {
         emit WithdrawExecuted(requestId, req.user, req.amount);
     }
 
-    function compound() external {
-        uint256 reward = users[msg.sender].reward;
-        require(reward > 0, "Nothing to compund");
-
-        users[msg.sender].deposit += reward;
-        users[msg.sender].reward = 0;
-
+    function setAutoCompound(bool status) external {
+        users[msg.sender].autoCompound = status;
     }
 
-    function harvestReward() external {
-        uint256 reward = users[msg.sender].reward;
-        require(reward > 0, "Nothing to harvest");
+    function compound() external {
+        uint256 reward = calculateHarvest(msg.sender);
+        require(reward > 0, "Nothing to compund");
 
+        UserInfo storage u = users[msg.sender];
+        u.deposit += reward;
+        u.lastHarvestBlock = block.number;
+    }
+
+    function harvest() external {
         _forceHarvest(msg.sender);
-
-        emit RewardHarvested(msg.sender, reward);
     }
 
     function _forceHarvest(address userAddr) internal {
-        uint256 reward = users[userAddr].reward;
+        uint256 reward = calculateHarvest(userAddr);
         if(reward > 0) {
+            UserInfo storage u = users[userAddr];
             usdc.safeTransfer(userAddr, reward);
-            users[userAddr].reward = 0;
+            u.lastHarvestBlock = block.number;
+            emit RewardHarvested(userAddr, reward);
         }
-
     }
+
+    function calculateHarvest(address userAddr) public view returns (uint256){
+        UserInfo storage u = users[userAddr];
+        uint256 blocks = block.number - u.lastHarvestBlock;
+        uint256 reward = (u.deposit * rewardAPR * blocks) / (blocksPerYear * BPS_DIVISOR);
+        return reward;
+    }
+
 
     // --- Originator ---
     function depositCollateral(uint256 amount) external {
@@ -228,7 +235,7 @@ contract LSRWAExpress {
 
     // --- Admin ---
 
-    function processRequests(ApprovedRequest[] calldata arequests, address[] calldata unpaidBorrowerList, address[] calldata activeUserList) external onlyAdmin {
+    function processRequests(ApprovedRequest[] calldata arequests, address[] calldata unpaidBorrowerList) external onlyAdmin {
         // require(block.number > currentEpoch.endBlock, "Epoch not ended");
 
         uint256 totalActiveDeposits;
@@ -288,32 +295,32 @@ contract LSRWAExpress {
         }
 
         // Rewards
-        uint256 reward;
-        for (uint256 i = 0; i < activeUserList.length; i++) {
-            address user = activeUserList[i];
-            UserInfo storage u = users[user];
+        // uint256 reward;
+        // for (uint256 i = 0; i < activeUserList.length; i++) {
+        //     address user = activeUserList[i];
+        //     UserInfo storage u = users[user];
 
-            uint256 blocks = epochDuration;
-            reward = (u.deposit * rewardAPR * blocks) / (blocksPerYear * BPS_DIVISOR);
+        //     uint256 blocks = epochDuration;
+        //     reward = (u.deposit * rewardAPR * blocks) / (blocksPerYear * BPS_DIVISOR);
 
-            if (reward > 0) {
-                if (u.autoCompound) {
-                    u.deposit += reward;
-                    totalActiveDeposits += reward;
-                } else {
-                    u.reward += reward;
-                }
+        //     if (reward > 0) {
+        //         if (u.autoCompound) {
+        //             u.deposit += reward;
+        //             totalActiveDeposits += reward;
+        //         } else {
+        //             u.reward += reward;
+        //         }
                 
-                u.lastHarvestBlock = block.number;
-            }
-        }
+        //         u.lastHarvestBlock = block.number;
+        //     }
+        // }
 
         currentEpoch = Epoch({
             startBlock: (currentEpochId == 1 || block.number < currentEpoch.endBlock) ? block.number : currentEpoch.endBlock + 1,
             endBlock: (currentEpochId == 1 || block.number < currentEpoch.endBlock) ? block.number + epochDuration : currentEpoch.endBlock + 1 + epochDuration,
             totalDeposits: totalActiveDeposits,
             totalWithdrawals: totalWithdrawals,
-            rewardsDistributed: reward,
+            // rewardsDistributed: 0,
             aprBps: rewardAPR
         });
 
@@ -325,12 +332,22 @@ contract LSRWAExpress {
         currentEpochId++;
     }
 
-    function setRewardAPR(uint256 aprBps) external onlyAdmin {
-        rewardAPR = aprBps;
+    function adminCompound(address[] calldata activeUserList) external onlyAdmin() {
+        for (uint256 i = 0; i < activeUserList.length; i++) {
+            address user = activeUserList[i];
+            UserInfo storage u = users[user];
+
+            uint256 reward = calculateHarvest(user);
+
+            if (reward > 0) {
+                u.deposit += reward;
+                u.lastHarvestBlock = block.number;
+            }
+        }
     }
 
-    function setAutoCompound(bool status) external {
-        users[msg.sender].autoCompound = status;
+    function setRewardAPR(uint256 aprBps) external onlyAdmin {
+        rewardAPR = aprBps;
     }
 
     function setEpochDuration(uint256 blocks) external onlyAdmin {
@@ -479,7 +496,7 @@ contract LSRWAExpress {
         return (filters, filters1);
     }
 
-    function getActiveUserList(address[] calldata tusers) onlyAdmin
+    function getAutoCompoundActiveUserList(address[] calldata tusers) onlyAdmin
         external
         view
         returns (address[] memory filters)
@@ -488,7 +505,7 @@ contract LSRWAExpress {
         address[] memory temp = new address[](tusers.length);
         for (uint i = 0; i < tusers.length; i++) {
             UserInfo storage user = users[tusers[i]];
-            if(user.deposit > 0) {
+            if(user.deposit > 0 && user.autoCompound) {
                 temp[j] = tusers[i];
                 j++;
             }

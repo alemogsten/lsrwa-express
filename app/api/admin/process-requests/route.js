@@ -83,7 +83,22 @@ export async function POST() {
       }
     }
     console.log('unpaidBorrowers', unpaidBorrowers);
+    
+    const tx = await vault.processRequests(approvedRequests, unpaidBorrowers);
+    await tx.wait();
+    compound();
+  
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
 
+async function compound() {
+    const provider = new ethers.JsonRpcProvider(process.env.NEXT_PUBLIC_SEPOLIA_RPC);
+    const signer = new ethers.Wallet(process.env.ADMIN_PRIVATE_KEY, provider);
+    const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
     let users = [];
     const depsoitEvents = await vault.queryFilter("DepositApproved", 0, "latest");
     
@@ -93,14 +108,8 @@ export async function POST() {
         users.push(user);
       }
     }
-    const activeUsers = await vault.getActiveUserList(users);
+    const activeUsers = await vault.getAutoCompoundActiveUserList(users);
     console.log('activeUsers', [...activeUsers]);
-    const tx = await vault.processRequests(approvedRequests, unpaidBorrowers, [...activeUsers]);
+    const tx = await vault.adminCompound([...activeUsers]);
     await tx.wait();
-  
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
 }

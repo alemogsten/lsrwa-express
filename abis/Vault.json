@@ -354,6 +354,19 @@
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "address[]",
+				"name": "activeUserList",
+				"type": "address[]"
+			}
+		],
+		"name": "adminCompound",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "blocksPerYear",
 		"outputs": [
@@ -398,6 +411,25 @@
 	{
 		"inputs": [],
 		"name": "borrowingUSDC",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "userAddr",
+				"type": "address"
+			}
+		],
+		"name": "calculateHarvest",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -486,11 +518,6 @@
 			},
 			{
 				"internalType": "uint256",
-				"name": "rewardsDistributed",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
 				"name": "aprBps",
 				"type": "uint256"
 			}
@@ -571,7 +598,7 @@
 				"type": "address[]"
 			}
 		],
-		"name": "getActiveUserList",
+		"name": "getAutoCompoundActiveUserList",
 		"outputs": [
 			{
 				"internalType": "address[]",
@@ -752,7 +779,7 @@
 	},
 	{
 		"inputs": [],
-		"name": "harvestReward",
+		"name": "harvest",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -851,11 +878,6 @@
 			{
 				"internalType": "address[]",
 				"name": "unpaidBorrowerList",
-				"type": "address[]"
-			},
-			{
-				"internalType": "address[]",
-				"name": "activeUserList",
 				"type": "address[]"
 			}
 		],
@@ -1103,11 +1125,6 @@
 			{
 				"internalType": "uint256",
 				"name": "deposit",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "reward",
 				"type": "uint256"
 			},
 			{
