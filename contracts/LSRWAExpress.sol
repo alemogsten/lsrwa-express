@@ -110,7 +110,8 @@ contract LSRWAExpress {
     function requestDeposit(uint256 amount) external returns (uint256 requestId) {
         require(amount > 0, "Zero amount");
         
-        _forceHarvest(msg.sender);
+        UserInfo storage u = users[msg.sender];
+        if(u.lastHarvestBlock == 0) u.lastHarvestBlock = block.number;
 
         usdc.safeTransferFrom(            
             msg.sender,
@@ -127,8 +128,6 @@ contract LSRWAExpress {
     function requestWithdraw(uint256 amount) external returns (uint256 requestId) {
         require(amount > 0, "Invalid amount");
         require(users[msg.sender].deposit >= amount, "Insufficient deposit balance");
-
-        _forceHarvest(msg.sender);
 
         requestId = requestCounter++;
         requests[requestId] = Request(msg.sender, amount, block.timestamp, true, false, false);
@@ -171,12 +170,7 @@ contract LSRWAExpress {
     }
 
     function compound() external {
-        uint256 reward = calculateHarvest(msg.sender);
-        require(reward > 0, "Nothing to compund");
-
-        UserInfo storage u = users[msg.sender];
-        u.deposit += reward;
-        u.lastHarvestBlock = block.number;
+        _compound(msg.sender);
     }
 
     function harvest() external {
@@ -190,6 +184,15 @@ contract LSRWAExpress {
             usdc.safeTransfer(userAddr, reward);
             u.lastHarvestBlock = block.number;
             emit RewardHarvested(userAddr, reward);
+        }
+    }
+
+    function _compound(address userAddr) internal {
+        uint256 reward = calculateHarvest(userAddr);
+        if(reward > 0) {
+            UserInfo storage u = users[userAddr];
+            u.deposit += reward;
+            u.lastHarvestBlock = block.number;
         }
     }
 
@@ -246,6 +249,7 @@ contract LSRWAExpress {
             ApprovedRequest memory req = arequests[i];
 
             if (req.isWithdraw) {
+
                 Request storage wReq = requests[req.requestId];
                 // if(wReq.processed) continue;
                 if(users[req.user].deposit < req.amount) continue;
@@ -264,12 +268,19 @@ contract LSRWAExpress {
                 users[req.user].deposit -= req.amount;
                 
                 wReq.processed = true;
+                uint256 reward = calculateHarvest(req.user);
+                if(reward > 0) {
+                    wReq.amount += reward;
+                    UserInfo storage u = users[req.user];
+                    u.lastHarvestBlock = block.number;
+                }
                 
                 totalWithdrawals += req.amount;
 
                 emit WithdrawApproved(req.requestId, req.user, req.amount);
                 
-                    // repaymentRequiredEpochId = currentEpochId; // enable when needed
+                    // repaymentRequiredEpochId = currentEpochId; // enable when needed  
+                // _forceHarvest(req.user);
                 
             } else {
                 Request storage dReq = requests[req.requestId];
@@ -279,6 +290,8 @@ contract LSRWAExpress {
                 users[req.user].deposit += req.amount;
                 totalActiveDeposits += req.amount;
                 dReq.processed = true;
+
+                _compound(req.user);
                 
                 emit DepositApproved(req.requestId, req.user, req.amount);
             }
@@ -334,15 +347,7 @@ contract LSRWAExpress {
 
     function adminCompound(address[] calldata activeUserList) external onlyAdmin() {
         for (uint256 i = 0; i < activeUserList.length; i++) {
-            address user = activeUserList[i];
-            UserInfo storage u = users[user];
-
-            uint256 reward = calculateHarvest(user);
-
-            if (reward > 0) {
-                u.deposit += reward;
-                u.lastHarvestBlock = block.number;
-            }
+            _compound(activeUserList[i]);
         }
     }
 
