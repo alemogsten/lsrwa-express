@@ -1,5 +1,3 @@
-'use client';
-
 import { useReadContracts } from 'wagmi';
 import { formatUnits } from "ethers";
 import vaultAbi from '@/abis/Vault.json';
@@ -41,6 +39,11 @@ export function useAdminSummary() {
         address: VAULT_ADDRESS,
         functionName: 'repaymentRequired',
       },
+      {
+        abi: vaultAbi,
+        address: VAULT_ADDRESS,
+        functionName: 'rewardDebt',
+      },
     ],
     allowFailure: false,
   });
@@ -50,6 +53,7 @@ export function useAdminSummary() {
   const poolLSRWA = formatUnits(data?.[2] ?? 0n, 18);
   const collateralRatio = Number(data?.[3]?? 0n) ;
   const repaymentRequired = data?.[4]?? false ;
+  const rewardDebt = Number(data?.[5]?? 0n) ;
 
   return {
     poolUSDC,
@@ -57,6 +61,7 @@ export function useAdminSummary() {
     poolLSRWA,
     collateralRatio,
     repaymentRequired,
+    rewardDebt,
     refetch,
     isLoading,
     error,
