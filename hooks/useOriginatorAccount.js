@@ -1,5 +1,3 @@
-'use client';
-
 import { useAccount, useReadContracts } from 'wagmi';
 import { formatUnits } from "ethers";
 import vaultAbi from '@/abis/Vault.json';

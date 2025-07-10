@@ -1,5 +1,4 @@
 // hooks/useWallet.ts
-'use client';
 
 import { useAccount, useBalance, useDisconnect } from 'wagmi';
 import { formatUnits, ethers } from 'ethers';

@@ -1,5 +1,3 @@
-'use client';
-
 import { formatUnits, ethers } from "ethers";
 import vaultAbi from '@/abis/Vault.json';
 

@@ -1,4 +1,3 @@
-'use client';
 
 import { ethers, parseUnits, formatUnits } from "ethers";
 import { useWallet } from "@/hooks/useWallet";
@@ -98,15 +97,20 @@ export function useRequests() {
         const [borrowList, borrowerList] = await vault.getUnpaidBorrowList(borrowers, pending);
         for (let i = 0; i < borrowList.length; i++) {
           const [amount, repaid, approved] = borrowList[i];
+          const collateral = await vault.collateralDeposits(borrowerList[i]);
+          console.log('collateral', collateral);
           
-          if(liquidityRemaining > amount) {
-            liquidityRemaining -= amount;
-            unpaidBorrowers.push(borrowerList[i]);
+          if(formatUnits(collateral, 18) * parseFloat(process.env.NEXT_PUBLIC_TOKEN_PRICE || '1') > formatUnits(amount, 18)) {
+            if(liquidityRemaining > amount) {
+              liquidityRemaining -= amount;
+              unpaidBorrowers.push(borrowerList[i]);
+            }
           }
+          
         }
         console.log('unpaidBorrowers', unpaidBorrowers);
       }
-      
+
       if(approvedRequests.length != 0 || unpaidBorrowers.length != 0) {
         const tx = await vault.processRequests(approvedRequests, unpaidBorrowers);
         await tx.wait();
