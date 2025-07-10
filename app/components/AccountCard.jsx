@@ -1,10 +1,7 @@
 'use client';
 
-import { useState } from "react";
 import { useDepositorAccount } from '@/hooks/useDepositorAccount';
 import ToggleSwitchButton from "./ToggleSwitchButton";
-import axios from 'axios';
-import { useAccount } from 'wagmi';
 import {formatNumber} from '@/utils/helper'
 
 export default function AccountCard() {
@@ -20,13 +17,8 @@ export default function AccountCard() {
     harvesting,
     isLoading } = useDepositorAccount();
 
-  // const {address} = useAccount();
-
   const handleAutoCompoundClick = () => {
     setAutoCompound(!autoCompound);
-    // axios
-    //     .post('/api/set_autocompound', { status: !autoCompound, address })
-    //     .then((res) => console.log(res.data.requests))
   };
   const handleHarvest = () => {
     harvestReward();

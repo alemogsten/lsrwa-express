@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { useReadContract } from 'wagmi';
+import { ethers } from "ethers";
 import { format, formatDuration, intervalToDuration } from 'date-fns';
 import vaultAbi from '@/abis/Vault.json';
-import axios from 'axios';
+import { connectWallet } from "@/utils/wallet";
 
 const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
 const AVERAGE_BLOCK_TIME_MS = process.env.NEXT_PUBLIC_BLOCK_TIME * 1000;
@@ -24,13 +25,12 @@ export default function EpochDurationManager() {
   const handleSetDuration = async () => {
     if (!newDuration) return;
     setIsPending(true);
-    axios
-            .post('/api/admin/set_epoch_duration', { value: parseInt(newDuration / AVERAGE_BLOCK_TIME_MS) })
-            .then((res) => {
-              console.log(res.data.status);
-              refetch();
-            })
-            .finally(() => setIsPending(false));
+    const {signer} = await connectWallet();
+    const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
+    const tx = await vault.setEpochDuration(parseInt(newDuration / AVERAGE_BLOCK_TIME_MS));
+    await tx.wait();
+    setIsPending(false);
+    refetch();
   };
 
   const formattedTimeLeft = formatDuration(

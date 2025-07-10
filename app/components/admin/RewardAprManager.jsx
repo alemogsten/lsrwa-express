@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useReadContract } from 'wagmi';
+import { ethers } from "ethers";
 import vaultAbi from '@/abis/Vault.json';
-import axios from 'axios';
+import { connectWallet } from "@/utils/wallet";
 
 const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
 
@@ -20,14 +21,13 @@ export default function RewardAPRManager() {
 
   const handleSetRewardAPR = async () => {
       setIsPending(true);
-    axios
-            .post('/api/admin/set_rewardapr', { value: newAPR })
-            .then((res) => {
-              console.log(res.data.status);
-              setNewAPR('');
-              refetch(); // refresh rewardAPR after update
-            })
-            .finally(() => setIsPending(false));
+      const {signer} = await connectWallet();
+    const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
+    const tx = await vault.setRewardAPR(newAPR*100);
+    await tx.wait();
+    setNewAPR('');
+    setIsPending(false);
+    refetch();
   };
 
   return (

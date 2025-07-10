@@ -18,43 +18,6 @@ export default function Home() {
     balance,
     symbol,
   } = useWallet();
-  const histoires = [
-    {
-      type: 1,
-      timestamp: '1748217600',
-      id: 9,
-      amount: 500,
-      status: 3
-    },
-    {
-      type: 2,
-      timestamp: '1748217600',
-      id: 10,
-      amount: 500,
-      status: 1
-    },
-    {
-      type: 1,
-      timestamp: '1748217600',
-      id: 11,
-      amount: 500,
-      status: 2
-    },
-    {
-      type: 2,
-      timestamp: '1748217600',
-      id: 13,
-      amount: 500,
-      status: 2
-    },
-    {
-      type: 2,
-      timestamp: '1748217600',
-      id: 14,
-      amount: 500,
-      status: 3
-    },
-  ]
   return (
     <main className="px-[20px] md:px-[66px] xl:px-[120px] py-20">
       

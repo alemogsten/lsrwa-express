@@ -31,18 +31,8 @@ export function useOriginatorAccount() {
       {
         abi: vaultAbi,
         address: VAULT_ADDRESS,
-        functionName: 'repaymentRequiredEpochId',
+        functionName: 'repaymentRequired',
       },
-      {
-        abi: vaultAbi,
-        address: VAULT_ADDRESS,
-        functionName: 'maxEpochsBeforeLiquidation',
-      },
-      {
-        abi: vaultAbi,
-        address: VAULT_ADDRESS,
-        functionName: 'currentEpochId',
-      }
     ],
     allowFailure: false,
     query: {
@@ -52,20 +42,16 @@ export function useOriginatorAccount() {
 
   const deposited = formatUnits(data?.[0] ?? 0n, 18);
   const borrowRequest = data?.[1] ?? null;
-  const borrowed = borrowRequest!= null && Number(borrowRequest[1]) != 0 && borrowRequest[2] == false ? formatUnits(borrowRequest[0], 18) : 0;
+  const borrowed = borrowRequest!= null && borrowRequest[1] == false && borrowRequest[2] == true ? formatUnits(borrowRequest[0], 18) : 0;
   const collateralRatio = Number(data?.[2]?? 0n) ;
-  const repaymentRequiredEpochId = Number(data?.[3]?? 0n) ;
-  const maxEpochsBeforeLiquidation = Number(data?.[4]?? 0n) ;
-  const currentEpochId = Number(data?.[5]?? 0n) ;
-  const repaid = !isLoading && borrowRequest[2] == false && Number(borrowRequest[1]) != 0 && Number(repaymentRequiredEpochId) != 0;
+  const repaymentRequired = data?.[3]?? false ;
+  const repaid = !isLoading && borrowRequest[2] == false && Number(borrowRequest[1]) != 0 && repaymentRequired;
 
   return {
     deposited,
     borrowed,
     collateralRatio,
-    repaymentRequiredEpochId,
-    maxEpochsBeforeLiquidation,
-    currentEpochId,
+    repaymentRequired,
     repaid,
     refetch,
     isLoading,

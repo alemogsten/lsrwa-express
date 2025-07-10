@@ -20,12 +20,10 @@ export default function EpochProgressBar({refresh=false}) {
 
     async function getEpochBlocks() {
       const vault = new ethers.Contract(vaultAddress, vaultAbi, provider);
-      const epoch = await vault.currentEpoch();
+      const epochDuration = Number(await vault.epochDuration());
+      const startBlock = await vault.epochStart();
       
-      const startBlock = Number(epoch.startBlock);
-      const endBlock = Number(epoch.endBlock);
-      
-      const durationMs = (endBlock - startBlock) * AVERAGE_BLOCK_TIME_MS;
+      const durationMs = epochDuration * AVERAGE_BLOCK_TIME_MS;
 
       const block = await provider.getBlock(startBlock);
       const startTimestampMs = Number(block.timestamp) * 1000;

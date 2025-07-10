@@ -2,6 +2,8 @@
 import { ethers } from "ethers";
 
 export async function connectWallet() {
+  if (typeof window === "undefined") return null
+  
   if (typeof window.ethereum === "undefined") {
     alert("MetaMask not detected");
     return null;

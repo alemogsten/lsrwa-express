@@ -2,20 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import { formatNumber } from '@/utils/helper';
+import { useRequests } from '@/hooks/useRequests';
+import { connectWallet } from "@/utils/wallet";
 
 export default function PendingWithdrawalCard() {
   const [withdrawAmount, setWithdrawAmount] = useState(0);
+  const {fetchRequests} = useRequests();
 
   useEffect(() => {
-    const fetchRequests = async () => {
-        const params = new URLSearchParams({
-            status: 'pending',
-            type: 2,
-        });
-
-        const res = await fetch(`/api/admin/requests?${params}`);
-        const json = await res.json();
-        const data = json.data;
+    const fetchRequest = async () => {
+      const { signer } = await connectWallet();
+        const {data, total} = await fetchRequests(signer, 2, false, 0);
+        
         var amount = 0;
         data.forEach(element => {
           amount += parseFloat(element.amount);
@@ -23,7 +21,7 @@ export default function PendingWithdrawalCard() {
         setWithdrawAmount(amount);
     };
 
-    fetchRequests();
+    fetchRequest();
 }, []);
 
 

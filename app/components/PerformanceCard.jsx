@@ -1,7 +1,6 @@
 'use client';
 
 import { useDepositorAccount } from '@/hooks/useDepositorAccount';
-import { useWallet } from '@/hooks/useWallet';
 import Progressbar from "./Progressbar";
 
 export default function AccountCard() {

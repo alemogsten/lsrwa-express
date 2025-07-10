@@ -2,8 +2,9 @@
 'use client';
 
 import { useAccount, useBalance, useDisconnect } from 'wagmi';
-import { formatUnits } from 'ethers';
+import { formatUnits, ethers } from 'ethers';
 import {formatNumber} from '@/utils/helper';
+import {connectWallet} from '@/utils/wallet';
 
 import dotenv from "dotenv";
 dotenv.config();
@@ -44,7 +45,10 @@ export function useWallet() {
 
   const decimals = parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS || '6');
 
+  const isAdminConnected = isConnected && address == process.env.NEXT_PUBLIC_ADMIN_ADDRESS
+
   return {
+    isAdminConnected,
     address,
     isConnected,
     status,

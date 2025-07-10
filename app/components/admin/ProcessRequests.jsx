@@ -1,11 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useRequests } from '@/hooks/useRequests';
+import { connectWallet } from "@/utils/wallet";
 
 export default function ProcessRequests() {
+    const {fetchRequests, processRequests} = useRequests();
+
     const [requests, setRequests] = useState([]);
-    const [status, setStatus] = useState('pending');
+    const [processed, setStatus] = useState(false);
     const [type, setType] = useState(0);
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
@@ -15,9 +18,10 @@ export default function ProcessRequests() {
     const handleProcessRequests = async () => {
         setProcessingRequests(true);
         try {
-            const res = await axios.post('/api/admin/process-requests');
-            alert(res.data.success ? "Requests processed!" : res.data.error);
-            fetchRequests();
+            const { signer } = await connectWallet();
+            await processRequests(signer);
+            alert("Requests processed!");
+            fetchRequest();
         } catch (err) {
             console.error("Failed to process requests:", err);
             alert("Error processing requests");
@@ -26,34 +30,27 @@ export default function ProcessRequests() {
         }
     };
 
-    const fetchRequests = async () => {
-        const params = new URLSearchParams({
-            page,
-            limit,
-            ...(status && { status }),
-            ...(type && { type }),
-        });
-
-        const res = await fetch(`/api/admin/requests?${params}`);
-        const json = await res.json();
-        setRequests(json.data);
-        setTotal(json.total);
+    const fetchRequest = async () => {
+        const { signer } = await connectWallet();
+        const {data, total} = await fetchRequests(signer, type, processed, page, limit);
+        setRequests(data);
+        setTotal(total);
     };
 
     useEffect(() => {
-        fetchRequests();
-    }, [status, type, page]);
+        fetchRequest();
+    }, [processed, type, page]);
 
     const totalPages = Math.ceil(total / limit);
 
     return (
         <div className="p-6 space-y-6">
             <div className="flex gap-4 items-center">
-                <select value={status} onChange={(e) => setStatus(e.target.value)} className="p-2 border rounded">
-                    <option value="pending">Pending</option>
-                    <option value="completed">Completed</option>
+                <select key={1} value={processed} onChange={(e) => setStatus(e.target.value === 'true')} className="p-2 border rounded">
+                    <option value="false">Pending</option>
+                    <option value="true">Completed</option>
                 </select>
-                <select value={type} onChange={(e) => setType(e.target.value)} className="p-2 border rounded">
+                <select  key={2} value={type} onChange={(e) => setType(e.target.value)} className="p-2 border rounded">
                     <option value="0">All Types</option>
                     <option value="1">Deposit</option>
                     <option value="2">Withdraw</option>

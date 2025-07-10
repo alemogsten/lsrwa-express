@@ -16,10 +16,7 @@ export default function AccountCard() {
   const { 
     deposited, 
     borrowed,
-    repaymentRequiredEpochId,
-    maxEpochsBeforeLiquidation,
-    currentEpochId,
-    repaid, 
+    repaymentRequired,
     refetch,
     isLoading
    } = useOriginatorAccount();
@@ -73,9 +70,8 @@ export default function AccountCard() {
             <p className='text-[14px] text-gray font-medium leading-[22px]'>Currently Borrowed</p>
           </div>
         </div>
-        {repaid && <div>
+        {borrowed > 0 && repaymentRequired && <div>
           <p className='text-red-600 text-right'>Repayment required</p>
-         <p className='text-right'>Until liquidate collaterals, Epoch remained:  {Math.max(0, maxEpochsBeforeLiquidation-(currentEpochId-repaymentRequiredEpochId))}</p>
         </div>}
       </div>
   );

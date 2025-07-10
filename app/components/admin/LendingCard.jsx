@@ -1,26 +1,26 @@
 'use client';
 
 import { useState } from 'react';
+import { ethers } from "ethers";
 import { formatNumber } from '@/utils/helper';
-import axios from 'axios';
 import { useAdminSummary } from '@/hooks/useAdminSummary';
+import { connectWallet } from "@/utils/wallet";
+import vaultAbi from '@/abis/Vault.json';
 
 export default function LendingCard() {
 
-  const {borrowingUSDC, repaymentRequiredEpochId, currentEpochId, maxEpochsBeforeLiquidation, refetch} = useAdminSummary();
+  const {borrowingUSDC, repaymentRequired, refetch} = useAdminSummary();
 
   const [loading, setLoading] = useState(false);
 
-  const handleRepayment = () => {
+  const handleRepayment = async () => {
     setLoading(true);
-    axios
-      .post('/api/admin/require-repayment')
-      .then((res) => {
-        alert('Required repayment successfully.');
-        refetch();
-        console.log(res.data.success);
-      })
-      .finally(() => setLoading(false));
+    const {signer} = await connectWallet();
+    const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
+    const tx = await vault.RequireRepay();
+    await tx.wait();
+    alert('Required repayment successfully.')
+    setLoading(false);
   }
 
   return (
@@ -30,10 +30,9 @@ export default function LendingCard() {
         <p className='text-lg font-bold'>{borrowingUSDC ? formatNumber(borrowingUSDC) : '0.0'}</p>
       </div>
       <div>
-      {repaymentRequiredEpochId == 0 || undefined ? 
+      {borrowingUSDC > 0 && repaymentRequired ? <p className='text-red-500'>Required repayment</p> :
           <button onClick={handleRepayment} disabled={loading || borrowingUSDC == 0} className='px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded disabled:opacity-50'>{loading?'Doing require':'Require Repayment'}</button> 
-          : <div><p className='text-red-500'>Required repayment</p>
-          {currentEpochId && repaymentRequiredEpochId && <p className='text-black'>Remained Epoch: {parseInt(maxEpochsBeforeLiquidation) - (parseInt(currentEpochId) - parseInt(repaymentRequiredEpochId))}</p>}</div>}
+      }
       </div>
     </div>
   );

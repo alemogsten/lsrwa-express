@@ -1,24 +1,22 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useBorrows } from '@/hooks/useBorrows';
+import { connectWallet } from "@/utils/wallet";
 
 export default function Borrows() {
+    const {fetchBorrows} = useBorrows();
+
     const [requests, setRequests] = useState([]);
     const [page, setPage] = useState(1);
     const [total, setTotal] = useState(0);
     const limit = 10;
 
     const fetchRequests = async () => {
-        const params = new URLSearchParams({
-            page,
-            limit,
-        });
-
-        const res = await fetch(`/api/admin/borrows?${params}`);
-        const json = await res.json();
-        setRequests(json.data);
-        setTotal(json.total);
+        const { signer, address } = await connectWallet();
+        const {data, total} = await fetchBorrows(signer, page, limit, address);
+        setRequests(data);
+        setTotal(total);
     };
 
     useEffect(() => {
@@ -45,7 +43,7 @@ export default function Borrows() {
                                 <td className="px-4 py-2">{req.user}</td>
                                 <td className="px-4 py-2">${req.amount}</td>
                                 <td className="px-4 py-2">
-                                    {req.repaid ? 'Repaid' : req.epochStart != 0 ? 'Lending': 'Pending'}
+                                    {req.repaid ? 'Repaid' : (req.approved ? 'Lending': 'Pending')}
                                 </td>
                             </tr>
                         ))}

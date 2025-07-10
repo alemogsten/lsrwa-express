@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useReadContract } from 'wagmi';
-import axios from 'axios';
+import { ethers } from "ethers";
+import { connectWallet } from "@/utils/wallet";
 
 
 const VAULT_ADDRESS = process.env.NEXT_PUBLIC_VAULT_ADDRESS;
@@ -22,13 +23,12 @@ export default function CollateralRatioSetting() {
   const handleSubmit = async () => {
     if (!collateralRatio) return;
     setLoading(true);
-    axios
-      .post('/api/admin/set_collateral_ratio', { value: collateralRatio })
-      .then((res) => {
-        console.log(res.data.status);
-        refetch();
-      })
-      .finally(() => setLoading(false));
+    const {signer} = await connectWallet();
+    const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, VAULT_ABI, signer);
+    const tx = await vault.setCollateralRatio(collateralRatio);
+    await tx.wait();
+    setLoading(false);
+    refetch();
   };
 
   return (
