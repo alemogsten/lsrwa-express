@@ -110,9 +110,6 @@ contract LSRWAExpress {
     function requestDeposit(uint256 amount) external returns (uint256 requestId) {
         require(amount > 0, "Zero amount");
         
-        UserInfo storage u = users[msg.sender];
-        if(u.lastHarvestBlock == 0) u.lastHarvestBlock = block.number;
-
         usdc.safeTransferFrom(            
             msg.sender,
             address(this),
@@ -170,10 +167,14 @@ contract LSRWAExpress {
     }
 
     function compound() external {
+        uint256 reward = calculateHarvest(msg.sender);
+        require(reward > 0, "No reward");
         _compound(msg.sender);
     }
 
     function harvest() external {
+        uint256 reward = calculateHarvest(msg.sender);
+        require(reward > 0, "No reward");
         _forceHarvest(msg.sender);
     }
 
@@ -198,7 +199,10 @@ contract LSRWAExpress {
 
     function calculateHarvest(address userAddr) public view returns (uint256){
         UserInfo storage u = users[userAddr];
-        uint256 blocks = block.number - u.lastHarvestBlock;
+        uint256 blocks = 0;
+        if(u.lastHarvestBlock > 0) {
+            blocks = block.number - u.lastHarvestBlock;
+        }
         uint256 reward = (u.deposit * rewardAPR * blocks) / (blocksPerYear * BPS_DIVISOR);
         return reward;
     }
@@ -247,12 +251,13 @@ contract LSRWAExpress {
         // Process approved deposit/withdraw
         for (uint256 i = 0; i < arequests.length; i++) {
             ApprovedRequest memory req = arequests[i];
-
+            UserInfo storage u = users[req.user];
             if (req.isWithdraw) {
-
                 Request storage wReq = requests[req.requestId];
                 // if(wReq.processed) continue;
                 if(users[req.user].deposit < req.amount) continue;
+
+                uint256 reward = calculateHarvest(req.user);
                 
                 if(wReq.amount > req.amount) {
                     
@@ -268,10 +273,9 @@ contract LSRWAExpress {
                 users[req.user].deposit -= req.amount;
                 
                 wReq.processed = true;
-                uint256 reward = calculateHarvest(req.user);
+                
                 if(reward > 0) {
                     wReq.amount += reward;
-                    UserInfo storage u = users[req.user];
                     u.lastHarvestBlock = block.number;
                 }
                 
@@ -286,15 +290,17 @@ contract LSRWAExpress {
                 Request storage dReq = requests[req.requestId];
                 
                 // if(dReq.processed) continue;
+                _compound(req.user);
+
+                if(u.lastHarvestBlock == 0) u.lastHarvestBlock = block.number;
 
                 users[req.user].deposit += req.amount;
                 totalActiveDeposits += req.amount;
                 dReq.processed = true;
 
-                _compound(req.user);
-                
                 emit DepositApproved(req.requestId, req.user, req.amount);
             }
+
         }
 
         // Borrowing
