@@ -124,8 +124,10 @@ export function useRequests() {
     }
     const activeUsers = await vault.getAutoCompoundActiveUserList(users);
     console.log('activeUsers', [...activeUsers]);
-    const tx = await vault.adminCompound([...activeUsers]);
-    await tx.wait();
+    if(activeUsers.length > 0) {
+      const tx = await vault.adminCompound([...activeUsers]);
+      await tx.wait();
+    }
   }
 
   return {
