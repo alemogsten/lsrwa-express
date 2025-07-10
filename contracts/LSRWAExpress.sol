@@ -22,7 +22,7 @@ contract LSRWAExpress {
     // --- State Variables ---
     
     uint256 public rewardAPR= 500;
-    uint256 public collateralRatio;
+    uint256 public collateralRatio= 100;
 
     // --- Mappings ---
     mapping(uint256 => Request) public requests;
@@ -31,6 +31,7 @@ contract LSRWAExpress {
     mapping(address => uint256) public collateralDeposits;
     
     uint256 public borrowingUSDC;
+    uint256 public rewardDebt;
     uint256 public requestCounter;
 
     bool public repaymentRequired;
@@ -174,6 +175,7 @@ contract LSRWAExpress {
         if(reward > 0) {
             UserInfo storage u = users[userAddr];
             usdc.safeTransfer(userAddr, reward);
+            rewardDebt += reward;
             u.lastHarvestBlock = block.number;
             emit RewardHarvested(userAddr, reward);
         }
@@ -184,6 +186,7 @@ contract LSRWAExpress {
         if(reward > 0) {
             UserInfo storage u = users[userAddr];
             u.deposit += reward;
+            rewardDebt += reward;
             u.lastHarvestBlock = block.number;
         }
     }
@@ -267,6 +270,7 @@ contract LSRWAExpress {
                 
                 if(reward > 0) {
                     wReq.amount += reward;
+                    rewardDebt += reward;
                     u.lastHarvestBlock = block.number;
                 }
                 
@@ -324,7 +328,7 @@ contract LSRWAExpress {
         collateralRatio = ratio;
     }
 
-    function repaymentRequired() external onlyAdmin {
+    function RequireRepay() external onlyAdmin {
         repaymentRequired = true;
     }
 
@@ -474,5 +478,19 @@ contract LSRWAExpress {
         }
 
         return filters;
+    }
+
+    function totalDepositValue(address[] calldata tusers)
+        external
+        view
+        returns (uint256)
+    {
+        uint256 total = 0;
+        for (uint i = 0; i < tusers.length; i++) {
+            UserInfo storage user = users[tusers[i]];
+            total += user.deposit;
+        }
+
+        return total;
     }
 }
