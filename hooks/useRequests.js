@@ -92,21 +92,25 @@ export function useRequests() {
         }
       }
       
-      const pending = true;
-      const [borrowList, borrowerList] = await vault.getUnpaidBorrowList(borrowers, pending);
       let unpaidBorrowers = [];
-      for (let i = 0; i < borrowList.length; i++) {
-        const [amount, repaid, approved] = borrowList[i];
-        
-        if(liquidityRemaining > amount) {
-          liquidityRemaining -= amount;
-          unpaidBorrowers.push(borrowerList[i]);
+      if(borrowers.length > 0) {
+        const pending = true;
+        const [borrowList, borrowerList] = await vault.getUnpaidBorrowList(borrowers, pending);
+        for (let i = 0; i < borrowList.length; i++) {
+          const [amount, repaid, approved] = borrowList[i];
+          
+          if(liquidityRemaining > amount) {
+            liquidityRemaining -= amount;
+            unpaidBorrowers.push(borrowerList[i]);
+          }
         }
+        console.log('unpaidBorrowers', unpaidBorrowers);
       }
-      console.log('unpaidBorrowers', unpaidBorrowers);
       
-      const tx = await vault.processRequests(approvedRequests, unpaidBorrowers);
-      await tx.wait();
+      if(approvedRequests.length != 0 || unpaidBorrowers.length != 0) {
+        const tx = await vault.processRequests(approvedRequests, unpaidBorrowers);
+        await tx.wait();
+      }
       compound(vault);
       return true;
     
