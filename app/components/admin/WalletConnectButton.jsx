@@ -20,6 +20,10 @@ export default function WalletConnectButton() {
     setIsVisible(!isVisible);
   };
 
+  useEffect(() => {
+    if(!isAdminConnected) disconnect();
+  }, [isPending])
+
   return (
     <>
       {isAdminConnected ? (
