@@ -97,14 +97,14 @@ export function useRequests() {
         const [borrowList, borrowerList] = await vault.getUnpaidBorrowList(borrowers, pending);
         for (let i = 0; i < borrowList.length; i++) {
           const [amount, repaid, approved] = borrowList[i];
-          const collateral = await vault.collateralDeposits(borrowerList[i]);
-          console.log('collateral', collateral);
+          // const collateral = await vault.collateralDeposits(borrowerList[i]);
+          // console.log('collateral', collateral);
           
-          if(formatUnits(collateral, 18) * parseFloat(process.env.NEXT_PUBLIC_TOKEN_PRICE || '1') > formatUnits(amount, 18)) {
-            if(liquidityRemaining > amount) {
-              liquidityRemaining -= amount;
-              unpaidBorrowers.push(borrowerList[i]);
-            }
+          // if(formatUnits(collateral, 18) * parseFloat(process.env.NEXT_PUBLIC_TOKEN_PRICE || '1') > formatUnits(amount, parseInt(process.env.NEXT_PUBLIC_USDC_DECIMALS || '6'))) {
+          // }
+          if(liquidityRemaining > amount) {
+            liquidityRemaining -= amount;
+            unpaidBorrowers.push(borrowerList[i]);
           }
           
         }
