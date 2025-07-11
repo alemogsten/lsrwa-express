@@ -20,6 +20,7 @@ export default function LendingCard() {
     const tx = await vault.RequireRepay();
     await tx.wait();
     alert('Required repayment successfully.')
+    refetch();
     setLoading(false);
   }
 
