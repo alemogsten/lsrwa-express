@@ -53,7 +53,7 @@ export function useAdminSummary() {
   const poolLSRWA = formatUnits(data?.[2] ?? 0n, 18);
   const collateralRatio = Number(data?.[3]?? 0n) ;
   const repaymentRequired = data?.[4]?? false ;
-  const rewardDebt = Number(data?.[5]?? 0n) ;
+  const rewardDebt = formatUnits(data?.[5]?? 0n, USDC_DECIMAL) ;
 
   return {
     poolUSDC,
