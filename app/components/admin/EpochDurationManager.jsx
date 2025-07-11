@@ -25,12 +25,17 @@ export default function EpochDurationManager() {
   const handleSetDuration = async () => {
     if (!newDuration) return;
     setIsPending(true);
-    const {signer} = await connectWallet();
-    const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
-    const tx = await vault.setEpochDuration(parseInt(newDuration / AVERAGE_BLOCK_TIME_MS));
-    await tx.wait();
+    try {
+      
+      const {signer} = await connectWallet();
+      const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
+      const tx = await vault.setEpochDuration(parseInt(newDuration / AVERAGE_BLOCK_TIME_MS));
+      await tx.wait();
+      refetch();
+    } catch (error) {
+      alert("Failed: "+error.message);
+    }
     setIsPending(false);
-    refetch();
   };
 
   const formattedTimeLeft = formatDuration(

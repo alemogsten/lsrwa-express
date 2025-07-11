@@ -16,25 +16,30 @@ export default function LiquidityTokenCard() {
 
   const handleLiquidate = async () => {
     setLoading(true);
-    const {signer} = await connectWallet();
-    const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
-    
-    let borrowers = [];
-    const borrowEvents = await vault.queryFilter("BorrowRequested", 0, "latest");
-    
-    for (const event of borrowEvents) {
-      const { originator, amount } = event.args;
-      borrowers.push(originator);
+    try {
+      const {signer} = await connectWallet();
+      const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
+      
+      let borrowers = [];
+      const borrowEvents = await vault.queryFilter("BorrowRequested", 0, "latest");
+      
+      for (const event of borrowEvents) {
+        const { originator, amount } = event.args;
+        borrowers.push(originator);
+      }
+      const pending = false;
+      const [borrowerList] = await vault.getUnpaidBorrowList(borrowers, pending);
+  
+      const tx = await vault.liquidateCollateral(address, [...borrowerList]);
+      await tx.wait();
+      refetch();
+      setAddress('');
+      
+    } catch (error) {
+      alert("Failed: "+error.message);
     }
-    const pending = false;
-    const [borrowerList] = await vault.getUnpaidBorrowList(borrowers, pending);
-
-    const tx = await vault.liquidateCollateral(address, [...borrowerList]);
-    await tx.wait();
-    refetch();
       
     setLoading(false);
-    setAddress('');
   }
 
   return (

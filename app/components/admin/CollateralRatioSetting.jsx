@@ -27,12 +27,16 @@ export default function CollateralRatioSetting() {
       return;
     }
     setLoading(true);
-    const {signer} = await connectWallet();
-    const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, VAULT_ABI, signer);
-    const tx = await vault.setCollateralRatio(collateralRatio);
-    await tx.wait();
+    try {
+      const {signer} = await connectWallet();
+      const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, VAULT_ABI, signer);
+      const tx = await vault.setCollateralRatio(collateralRatio);
+      await tx.wait();
+      refetch();
+    } catch (error) {
+      alert("Failed: "+error.message);
+    }
     setLoading(false);
-    refetch();
   };
 
   return (

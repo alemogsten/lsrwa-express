@@ -15,12 +15,17 @@ export default function LendingCard() {
 
   const handleRepayment = async () => {
     setLoading(true);
-    const {signer} = await connectWallet();
-    const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
-    const tx = await vault.RequireRepay();
-    await tx.wait();
-    alert('Required repayment successfully.')
-    refetch();
+    try {
+      
+      const {signer} = await connectWallet();
+      const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
+      const tx = await vault.RequireRepay();
+      await tx.wait();
+      alert('Required repayment successfully.')
+      refetch();
+    } catch (error) {
+      alert("Failed: "+error.message);
+    }
     setLoading(false);
   }
 

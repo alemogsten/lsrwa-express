@@ -21,13 +21,18 @@ export default function RewardAPRManager() {
 
   const handleSetRewardAPR = async () => {
       setIsPending(true);
-      const {signer} = await connectWallet();
-    const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
-    const tx = await vault.setRewardAPR(newAPR*100);
-    await tx.wait();
-    setNewAPR('');
+      try {
+        const {signer} = await connectWallet();
+        const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, vaultAbi, signer);
+        const tx = await vault.setRewardAPR(newAPR*100);
+        await tx.wait();
+        
+        setNewAPR('');
+        refetch();
+    } catch (error) {
+        alert("Failed: "+error.message);
+      }
     setIsPending(false);
-    refetch();
   };
 
   return (
