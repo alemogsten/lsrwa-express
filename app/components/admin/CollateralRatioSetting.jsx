@@ -22,6 +22,10 @@ export default function CollateralRatioSetting() {
 
   const handleSubmit = async () => {
     if (!collateralRatio) return;
+    if(parseFloat(collateralRatio) < 100) {
+      alert('Collateral ratio must be above 100%');
+      return;
+    }
     setLoading(true);
     const {signer} = await connectWallet();
     const vault = new ethers.Contract(process.env.NEXT_PUBLIC_VAULT_ADDRESS, VAULT_ABI, signer);
